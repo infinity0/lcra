@@ -1,0 +1,109 @@
+html, body {
+  padding: 0;
+  height: 100%;
+}
+
+#window-find-reset-hack {
+  position: absolute;
+  top: -1000px;
+  left: -1000px;
+}
+
+/* main layout */
+main {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  height: 100%;
+}
+#article, #control, #references {
+  display: block;
+  height: 100%;
+}
+#article {
+  flex: 9 9 56.25%;
+}
+#control {
+  min-width: 12em;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+#references {
+  flex: 7 7 43.75%;
+  position: relative;
+}
+
+/* control layout */
+#control select {
+  display: block;
+}
+#control select, #control option, #control input[type=text], #control textarea {
+  width: 100%;
+}
+#article-file {
+  display: none;
+}
+#advanced {
+  position: absolute;
+  display: none;
+}
+#advcont:hover #advanced {
+  display: block;
+}
+#histctl {
+  flex-grow: 1;
+}
+
+/* references layout */
+.reference {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+#refurl {
+  display: block;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+#refurl > span {
+  display: inline-block;
+  background-color: color-mix(in srgb, currentColor 66%, transparent);
+  filter: invert(100%);
+}
+#refurl > span > a {
+  filter: invert(100%);
+}
+
+/* control sublayout */
+fieldset {
+  padding: 0.5ex 0.25ex;
+}
+fieldset > :not(legend), #advanced > * {
+  margin: 0.5ex 0;
+}
+fieldset > *:first-child {
+  margin-top: 0;
+}
+fieldset > *:last-child {
+  margin-bottom: 0;
+}
+
+/* text styling */
+body {
+  font-family: sans-serif;
+  font-size: 18px;
+}
+button {
+  min-width: 3.3ex;
+  vertical-align: middle;
+}
+.secondary {
+  font-size: smaller;
+}
+.warn {
+  color: red;
+}
