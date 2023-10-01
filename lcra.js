@@ -88,6 +88,11 @@ window.addEventListener("DOMContentLoaded", function() {
     return langs[0];
   }
 
+  function selectOption(o) {
+    o.selected = "selected";
+    o.scrollIntoView();
+  }
+
   function addWord(word) {
     let opt = document.createElement("option");
     if (typeof(word) == "object") {
@@ -99,9 +104,9 @@ window.addEventListener("DOMContentLoaded", function() {
       opt.setAttribute("zh-Latn-pinyin", PinyinHelper.convertToPinyinString(word, '', PinyinFormat.WITH_TONE_MARK) + " ??");
       opt.setAttribute("en", "");
     }
-    opt.selected = "selected";
     opt.appendChild(document.createTextNode(opt.value));
     vocab.appendChild(opt);
+    selectOption(opt);
   }
 
   function getWords() {
@@ -129,6 +134,12 @@ window.addEventListener("DOMContentLoaded", function() {
     for (let word of JSON.parse(storage.getItem("lcra-vocab") || "[]")) {
       addWord(word);
     }
+    let word = storage.getItem("lcra-vocab-selected");
+    for (let opt of vocab.options) {
+      if (opt.value == word) {
+        selectOption(opt);
+      }
+    }
     article.value = storage.getItem("lcra-article");
     article.style.display = storageGetBool("lcra-article-hide", false)? "none": "block";
     arthide.innerText = storageGetBool("lcra-article-hide", false)? "⇥": "⇤";
@@ -145,6 +156,9 @@ window.addEventListener("DOMContentLoaded", function() {
   function saveUI() {
     storage.setItem("lcra-lang", lang);
     storage.setItem("lcra-vocab", JSON.stringify(getWords()));
+    for (let opt of vocab.selectedOptions) {
+      storage.setItem("lcra-vocab-selected", opt.value);
+    }
     storage.setItem("lcra-article", article.value);
     storage.setItem("lcra-article-hide", (article.style.display == "none")? "1": "0");
     storage.setItem("lcra-article-edit", (article.disabled)? "0": "1");
@@ -270,8 +284,7 @@ window.addEventListener("DOMContentLoaded", function() {
       let found = false;
       for (let o of vocab.options) {
         if (w == o.value) {
-          o.selected = "selected";
-          o.scrollIntoView();
+          selectOption(o);
           found = true;
           break;
         }
@@ -287,6 +300,7 @@ window.addEventListener("DOMContentLoaded", function() {
   }
 
   vocab.addEventListener("change", () => {
+    saveUI();
     loadWordFromUI();
     loadReferencesFromUI();
   });
@@ -326,7 +340,7 @@ window.addEventListener("DOMContentLoaded", function() {
       o.remove();
     }
     if (vocab.options.length) {
-      vocab.options[vocab.options.length-1].selected = "selected";
+      selectOption(vocab.options[vocab.options.length-1]);
     }
     saveUI();
     loadWordFromUI();
@@ -493,7 +507,13 @@ window.addEventListener("DOMContentLoaded", function() {
         let s = vocab.size - 1;
         vocab.size = 1;
         // give the browser some time to remove the scrollbars
-        setTimeout(() => { vocab.size = s; }, 1);
+        setTimeout(() => {
+          vocab.size = s;
+          // ensure selection is in view
+          for (let el of vocab.selectedOptions) {
+            el.scrollIntoView();
+          }
+        }, 1);
         break;
       }
     }
