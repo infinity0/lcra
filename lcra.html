@@ -39,7 +39,12 @@ placeholder-en="Basic instructions:
   <fieldset>
     <legend>文章 Article</legend>
     <div style="float: left;">
-      <button id="article-edit" title="" title-en="Toggle article editability">✎</button>
+      <button id="article-hide" title=""
+        title-en="Hide or show article text box.
+Hiding helps you read in an article in another window:
+Place that and this window side-by-side, then drag words
+from there and drop them into the add button (⊕) here.">⇤</button>
+      <button id="article-edit" title="" title-en="Edit or lock article, to avoid accidental edits.">✎</button>
       <button id="article-import" title="" title-en="Import article text">⇧</button>
     </div>
     <div id="advcont" style="float: right;">
@@ -47,7 +52,7 @@ placeholder-en="Basic instructions:
       <div id="advanced">
         <div><button id="help" title="" title-en="Show help text">?</button></div>
         <div><button id="setlang" title="" title-en="Set language of UI hints"><span style="font-size: 65%;"><sup>文</sup><sub>A</sub></span></button></div>
-        <div><button id="wipe" title="" title-en="Wipe all local data">♻</button></div>
+        <div><button id="wipe" title="" title-en="Wipe all local data" title-zh-Hans="擦除所有的本地数据">♻</button></div>
       </div>
     </div>
     <input type="file" id="article-file" accept="text/*" />
@@ -56,13 +61,15 @@ placeholder-en="Basic instructions:
     <legend>词汇 Vocabulary</legend>
     <select id="vocab" size="8"></select>
     <div style="float: left;">
-      <button id="addword" title="" title-en="Add word selected in article to vocab">⊕</button>
-      <button id="copyword" title="" title-en="Copy selected word to clipboard">⎘</button>
-      <button id="delword" title="" title-en="Delete selected word">⊖</button>
+      <button id="addword" title="" title-en="Add selected words from article, or
+Prompt for words to add, or
+Drag and drop words here to add">⊕</button>
+      <button id="copyword" title="" title-en="Copy word selected above to clipboard">⎘</button>
+      <button id="delword" title="" title-en="Delete word selected above">⊖</button>
     </div>
     <div style="float: right;">
-      <button id="vocab-export-json" title="" title-en="Export vocab JSON">⇩{}</button>
-      <button id="vocab-export-csv" title="" title-en="Export vocab CSV">⇩,</button>
+      <button id="vocab-export-json" title="" title-en="Export vocab as JSON">⇩{}</button>
+      <button id="vocab-export-csv" title="" title-en="Export vocab as CSV">⇩,</button>
     </div>
   </fieldset>
   <fieldset id="wordctl">
@@ -98,12 +105,12 @@ placeholder-en="Basic instructions:
   </fieldset>
 </div>
 <div id="references">
-  <iframe class="reference" is="x-frame-bypass" id="purpleculture" url="https://www.purpleculture.net/dictionary-details/?word=XX#resultarea"></iframe>
-  <iframe class="reference" is="x-frame-bypass" id="hanzicraft" url="https://hanzicraft.com/character/XX#display"></iframe>
-  <iframe class="reference" is="x-frame-bypass" id="wiktionary" url="https://en.wiktionary.org/wiki/TT#Chinese"></iframe>
-  <iframe class="reference" id="google" url="https://translate.google.com/?op=translate&sl=zh-CN&tl=en&text=XX"></iframe>
-  <iframe class="reference" id="baidu" url="https://fanyi.baidu.com/#zh/en/XX"></iframe>
-  <div id="refurl"><span><a href="" target="_blank"><span></span> <span style="display: inline-block; transform: scaleX(-1);">⎋</span></a></span></div>
+  <iframe sandbox class="reference" is="x-frame-bypass" id="purpleculture" urlpat="https://www.purpleculture.net/dictionary-details/?word=XX#resultarea"></iframe>
+  <iframe sandbox class="reference" is="x-frame-bypass" id="hanzicraft" urlpat="https://hanzicraft.com/character/XX#display"></iframe>
+  <iframe sandbox class="reference" is="x-frame-bypass" id="wiktionary" urlpat="https://en.wiktionary.org/wiki/TT#Chinese"></iframe>
+  <iframe sandbox class="reference" id="google" urlpat="https://translate.google.com/?op=translate&sl=zh-CN&tl=en&text=XX"></iframe>
+  <iframe sandbox class="reference" id="baidu" urlpat="https://fanyi.baidu.com/#zh/en/XX"></iframe>
+  <div id="refurl" class="frameurl"><span><a href="" target="_blank"><span></span></a></span></div>
 </div>
 </main>
 </body>

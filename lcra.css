@@ -19,6 +19,7 @@ main {
 #article, #control, #references {
   display: block;
   height: 100%;
+  position: relative;
 }
 #article {
   flex: 9 9 56.25%;
@@ -31,7 +32,6 @@ main {
 }
 #references {
   flex: 7 7 43.75%;
-  position: relative;
 }
 
 /* control layout */
@@ -55,29 +55,6 @@ main {
   flex-grow: 1;
 }
 
-/* references layout */
-.reference {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-}
-#refurl {
-  display: block;
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-}
-#refurl > span {
-  display: inline-block;
-  background-color: color-mix(in srgb, currentColor 66%, transparent);
-  filter: invert(100%);
-}
-#refurl > span > a {
-  filter: invert(100%);
-}
-
 /* control sublayout */
 fieldset {
   padding: 0.5ex 0.25ex;
@@ -90,6 +67,34 @@ fieldset > *:first-child {
 }
 fieldset > *:last-child {
   margin-bottom: 0;
+}
+
+/* references layout */
+.reference {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+.frameurl {
+  display: block;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+.frameurl > span {
+  display: inline-block;
+  background-color: color-mix(in srgb, currentColor 66%, transparent);
+  filter: invert(100%);
+}
+.frameurl > span > a {
+  filter: invert(100%);
+}
+.frameurl > span > a > span::after {
+  display: inline-block;
+  transform: scaleX(-1);
+  content: "⎋ ";
 }
 
 /* text styling */

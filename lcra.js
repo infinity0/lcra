@@ -12,13 +12,16 @@ window.addEventListener("DOMContentLoaded", function() {
       "en": "Enter language code, one of: ",
       "zh-Hans": "输入语言代码，其中之一：",
     },
-    "select-article": {
-      "en": "Please first select some word(s) in the article",
-      "zh-Hans": "请先在文章里选择单词。",
+    "open-url": {
+      "en": "Enter the full URL to open",
     },
-    "select-words": {
-      "en": "Please select word(s) rather than a sentence or long fragment",
-      "zh-Hans": "请选择单词而不是句子或长片段。",
+    "input-or-select": {
+      "en": "Please input the word(s) to add, or select some in the article then try again.",
+      "zh-Hans": "请输入要添加的单词，或者在文章里选择一些然后再重试。",
+    },
+    "confirm-long-word": {
+      "en": "may not be a word. Really add?",
+      "zh-Hans": "可能不是单词。真的添加？",
     },
     "set-mobile": {
       "en": "Set this in your browser's Developer Tools. Some browsers require you to reload the page afterwards.",
@@ -35,7 +38,8 @@ window.addEventListener("DOMContentLoaded", function() {
   const zhtw = OpenCC.Converter({ from: 'cn', to: 'tw' });
 
   let article = document.getElementById("article");
-  let artEdit = document.getElementById("article-edit");
+  let arthide = document.getElementById("article-hide");
+  let artedit = document.getElementById("article-edit");
   let help = document.getElementById("help");
   let setlang = document.getElementById("setlang");
   let wipe = document.getElementById("wipe");
@@ -47,51 +51,11 @@ window.addEventListener("DOMContentLoaded", function() {
   let refproxywarn = document.getElementById("reference-proxy-warn");
   let refmobile = document.getElementById("reference-mobile");
 
-  function addWord(word) {
-    let opt = document.createElement("option");
-    if (typeof(word) == "object") {
-      opt.value = word["zh-Hans"];
-      opt.setAttribute("zh-Latn-pinyin", word["zh-Latn-pinyin"]);
-      opt.setAttribute("en", word["en"]);
-    } else {
-      opt.value = word;
-      opt.setAttribute("zh-Latn-pinyin", PinyinHelper.convertToPinyinString(word, '', PinyinFormat.WITH_TONE_MARK) + " ??");
-      opt.setAttribute("en", "");
-    }
-    opt.selected = "selected";
-    opt.appendChild(document.createTextNode(opt.value));
-    vocab.appendChild(opt);
-  }
-
-  function getWords() {
-    return Array.from(vocab.options).map(opt => {return {
-      "zh-Hans": opt.value,
-      "zh-Latn-pinyin": opt.getAttribute("zh-Latn-pinyin"),
-      "en": opt.getAttribute("en")
-    }});
-  }
-
-  function makeUrl(el, word) {
-    let url = el.getAttribute("url");
-    return url.replace(/XX/, encodeURIComponent(word)).replace(/TT/, encodeURIComponent(zhtw(word)));
-  }
-
   function storageGetBool(key, def) {
     switch (storage.getItem(key)) {
       case "0": return false;
       case "1": return true;
       default: return def;
-    }
-  }
-
-  function loadLang(attr, f) {
-    for (let el of document.querySelectorAll("*[" + attr + "]")) {
-      for (let l of [lang, ...langs]) {
-        if (el.hasAttribute(attr + "-" + l)) {
-          f(el, el.getAttribute(attr + "-" + l));
-          break;
-        }
-      }
     }
   }
 
@@ -118,6 +82,41 @@ window.addEventListener("DOMContentLoaded", function() {
     return langs[0];
   }
 
+  function addWord(word) {
+    let opt = document.createElement("option");
+    if (typeof(word) == "object") {
+      opt.value = word["zh-Hans"];
+      opt.setAttribute("zh-Latn-pinyin", word["zh-Latn-pinyin"]);
+      opt.setAttribute("en", word["en"]);
+    } else {
+      opt.value = word;
+      opt.setAttribute("zh-Latn-pinyin", PinyinHelper.convertToPinyinString(word, '', PinyinFormat.WITH_TONE_MARK) + " ??");
+      opt.setAttribute("en", "");
+    }
+    opt.selected = "selected";
+    opt.appendChild(document.createTextNode(opt.value));
+    vocab.appendChild(opt);
+  }
+
+  function getWords() {
+    return Array.from(vocab.options).map(opt => ({
+      "zh-Hans": opt.value,
+      "zh-Latn-pinyin": opt.getAttribute("zh-Latn-pinyin"),
+      "en": opt.getAttribute("en")
+    }));
+  }
+
+  function loadLang(attr, f) {
+    for (let el of document.querySelectorAll("*[" + attr + "]")) {
+      for (let l of [lang, ...langs]) {
+        if (el.hasAttribute(attr + "-" + l)) {
+          f(el, el.getAttribute(attr + "-" + l));
+          break;
+        }
+      }
+    }
+  }
+
   function loadUI() {
     lang = storage.getItem("lcra-lang") || selectDefaultLanguage([getQueryVariable("lang"), ...navigator.languages]);
     vocab.replaceChildren([]);
@@ -125,6 +124,8 @@ window.addEventListener("DOMContentLoaded", function() {
       addWord(word);
     }
     article.value = storage.getItem("lcra-article");
+    article.style.display = storageGetBool("lcra-article-hide", false)? "none": "block";
+    arthide.innerText = storageGetBool("lcra-article-hide", false)? "⇥": "⇤";
     article.disabled = storageGetBool("lcra-article-edit", true)? "": "disabled";
     // purpleculture, our default reference, needs proxy on non-mobile to work
     refproxy.checked = storageGetBool("lcra-reference-proxy", !detectMobile());
@@ -139,66 +140,89 @@ window.addEventListener("DOMContentLoaded", function() {
     storage.setItem("lcra-lang", lang);
     storage.setItem("lcra-vocab", JSON.stringify(getWords()));
     storage.setItem("lcra-article", article.value);
+    storage.setItem("lcra-article-hide", (article.style.display == "none")? "1": "0");
     storage.setItem("lcra-article-edit", (article.disabled)? "0": "1");
     storage.setItem("lcra-reference-proxy", (refproxy.checked)? "1": "0");
     storage.setItem("lcra-reference", refselect.value);
   }
 
-  function loadReferencesFromUI(reload) {
-    let word = vocab.value;
-
-    for (let el of document.querySelectorAll("iframe[is=x-frame-bypass]")) {
-      el.proxyEnabled = refproxy.checked;
+  function loadFrame(el, url, reload) {
+    if (reload === false && el.src == url) {
+      return;
     }
-    for (let el of references) {
-      if (reload === true && el.clearSrc) {
-        el.clearSrc();
-      }
-      let url = makeUrl(el, word);
-      let i = url.indexOf("#");
-      if (i < 0 || reload !== true) {
-        el.src = url;
-      } else {
-        // browsers don't reload #-URLs in iframes properly, we force it here
-        el.src = url.substring(0, i);
-        let f = () => {
-          el.src = url;
-          el.removeEventListener("load", f);
-        };
-        el.addEventListener("load", f);
-      }
-      el.style.display = "none";
+    if (reload === true && el.clearSrc) {
+      el.clearSrc();
     }
-    if (refselect.value && vocab.selectedOptions.length) {
-      let el = document.getElementById(refselect.value);
-      el.style.display = "block";
-      refurl.href = makeUrl(el, word);
-      refurl.firstChild.innerText = refselect.selectedOptions[0].innerText.split("[")[0].replace(/ *$/g,"") + " - " + word;
-      refurl.style.display = "block";
+    let i = url.indexOf("#");
+    if (i < 0 || reload !== true) {
+      el.src = url;
     } else {
-      refurl.href = "";
-      refurl.firstChild.innerText = "";
-      refurl.style.display = "none";
+      // browsers don't reload #-URLs in iframes properly, we force it here
+      el.src = url.substring(0, i);
+      let f = () => {
+        el.src = url;
+        el.removeEventListener("load", f);
+      };
+      el.addEventListener("load", f);
     }
   }
 
+  function makeFrameUrl(el, word) {
+    let url = el.getAttribute("urlpat");
+    return url.replace(/XX/, encodeURIComponent(word)).replace(/TT/, encodeURIComponent(zhtw(word)));
+  }
+
+  function showFrameUrl(el, url, label) {
+    url = url || "";
+    label = label || ((url)? new URL(url).hostname: "");
+    el.href = url;
+    el.firstChild.innerText = label;
+    el.style.display = (url)? "block": "none";
+  }
+
+  function loadReferencesFromUI(reload) {
+    let word = vocab.value;
+
+    for (let el of references) {
+      if ("proxyEnabled" in el) {
+        el.proxyEnabled = refproxy.checked;
+      }
+      loadFrame(el, makeFrameUrl(el, word), reload);
+      el.style.display = "none";
+    }
+    let url = "";
+    let label = "";
+    if (refselect.value && vocab.selectedOptions.length) {
+      let el = document.getElementById(refselect.value);
+      el.style.display = "block";
+      url = makeFrameUrl(el, word);
+      label = refselect.selectedOptions[0].innerText.split("[")[0].replace(/ *$/g,"") + " - " + word;
+    }
+    showFrameUrl(refurl, url, label);
+  }
+
   article.addEventListener("input", saveUI, false);
-  artEdit.addEventListener("click", () => {
+  arthide.addEventListener("click", () => {
+    article.style.display = (article.style.display == "none")? "block": "none";
+    saveUI();
+    loadUI();
+  });
+  artedit.addEventListener("click", () => {
     article.disabled = (article.disabled)? "": "disabled";
     saveUI();
   });
-  let artImport = document.getElementById("article-import");
-  let artFile = document.getElementById("article-file");
-  artImport.addEventListener("click", () => {
-    artFile.showPicker();
+  let artimport = document.getElementById("article-import");
+  let artfile = document.getElementById("article-file");
+  artimport.addEventListener("click", () => {
+    artfile.showPicker();
   });
-  artFile.addEventListener("change", () => {
+  artfile.addEventListener("change", () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       article.value = e.target.result;
       saveUI();
     };
-    for (let file of artFile.files) {
+    for (let file of artfile.files) {
       reader.readAsText(file)
     }
   });
@@ -233,26 +257,16 @@ window.addEventListener("DOMContentLoaded", function() {
     loadReferencesFromUI();
   });
 
-  let addword = document.getElementById("addword");
-  addword.addEventListener("click", () => {
-    let selection = article.value.substring(article.selectionStart, article.selectionEnd);
-    if (selection.length == 0) {
-      window.alert(S("select-article"));
-      return;
-    }
-    // split on punctuation and whitespace
-    let words = selection.split(/[\p{P}\p{S}\s]+/gu);
+  function addInput(input) {
+    // split on non-Chinese characters
+    let words = input.split(/[^\p{sc=Han}]+/gu);
     for (let w of words) {
+      // confirm long words, giving a chance to edit
       if (w.length > 4) {
-        window.alert(S("select-words"));
-        return;
+        w = window.prompt('"' + w + '" ' + S("confirm-long-word"), w);
       }
-    }
-    for (let w of words) {
       // empty string is not a word
-      if (w.length == 0) {
-        continue;
-      }
+      if (!w) continue;
       // if word is already in the vocab, select it but don't add a new one
       let found = false;
       for (let o of vocab.options) {
@@ -270,6 +284,22 @@ window.addEventListener("DOMContentLoaded", function() {
     saveUI();
     loadWordFromUI();
     loadReferencesFromUI();
+  }
+
+  let addword = document.getElementById("addword");
+  addword.addEventListener("click", () => {
+    let input = article.value.substring(article.selectionStart, article.selectionEnd);
+    input = input || window.prompt(S("input-or-select"), "");
+    input && addInput(input);
+  });
+  addword.addEventListener("dragover", (e) => {
+    // required to make drop work
+    e.preventDefault();
+  });
+  addword.addEventListener("drop", (e) => {
+    // this doesn't work cross-origin unfortunately
+    addInput(e.dataTransfer.getData("text"));
+    e.preventDefault();
   });
   let copyword = document.getElementById("copyword");
   copyword.addEventListener("click", () => {
