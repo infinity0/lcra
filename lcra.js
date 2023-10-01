@@ -217,6 +217,9 @@ window.addEventListener("DOMContentLoaded", function() {
     artfile.showPicker();
   });
   artfile.addEventListener("change", () => {
+    if (!artfile.value) {
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
       article.value = e.target.result;
@@ -225,6 +228,8 @@ window.addEventListener("DOMContentLoaded", function() {
     for (let file of artfile.files) {
       reader.readAsText(file)
     }
+    // clear value, so change event is triggered again for same file
+    artfile.value = "";
   });
   help.addEventListener("click", () => {
     window.alert(article.placeholder);
@@ -245,18 +250,6 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   });
 
-  vocab.addEventListener("change", () => {
-    /**if (window.find && vocab.selectedOptions.length) {
-      // note: this works but destroys the existing selectionRange in #article
-      // it also shifts focus away from the vocab list
-      let w = vocab.selectedOptions[0].value;
-      window.find("window.find reset hack", false, true, true, false, false);
-      window.find(w, false, false, true, false, false);
-    }*/
-    loadWordFromUI();
-    loadReferencesFromUI();
-  });
-
   function addInput(input) {
     // split on non-Chinese characters
     let words = input.split(/[^\p{sc=Han}]+/gu);
@@ -272,6 +265,7 @@ window.addEventListener("DOMContentLoaded", function() {
       for (let o of vocab.options) {
         if (w == o.value) {
           o.selected = "selected";
+          o.scrollIntoView();
           found = true;
           break;
         }
@@ -286,6 +280,19 @@ window.addEventListener("DOMContentLoaded", function() {
     loadReferencesFromUI();
   }
 
+  vocab.addEventListener("change", () => {
+    loadWordFromUI();
+    loadReferencesFromUI();
+  });
+  vocab.addEventListener("dragover", (e) => {
+    // required to make drop work
+    e.preventDefault();
+  });
+  vocab.addEventListener("drop", (e) => {
+    // this doesn't work cross-origin unfortunately
+    addInput(e.dataTransfer.getData("text"));
+    e.preventDefault();
+  });
   let addword = document.getElementById("addword");
   addword.addEventListener("click", () => {
     let input = article.value.substring(article.selectionStart, article.selectionEnd);
