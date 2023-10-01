@@ -26,6 +26,12 @@ window.addEventListener("DOMContentLoaded", function() {
     "set-mobile": {
       "en": "Set this in your browser's Developer Tools. Some browsers require you to reload the page afterwards.",
     },
+    "sample-anki-deck": {
+      "en": "Also download a sample Anki deck for importing the CSV into?",
+    },
+    "sample-anki-deck-url": {
+      "en": "To download it later, the URL to the deck is inside the CSV file.",
+    },
   };
   function S(k) {
     for (let l of [lang, ...langs]) {
@@ -327,15 +333,13 @@ window.addEventListener("DOMContentLoaded", function() {
     loadReferencesFromUI();
   });
 
-  function exportVocab(contents, type) {
-    let blob = new Blob(contents, {type});
-
+  function download(url, label, cleanup) {
     // https://www.stefanjudis.com/snippets/how-trigger-file-downloads-with-javascript/
     // Create a link and set the URL using `createObjectURL`
     const link = document.createElement("a");
     link.style.display = "none";
-    link.href = URL.createObjectURL(blob);
-    link.download = "chinese-vocab";
+    link.href = url;
+    link.download = label;
 
     // It needs to be added to the DOM so it can be clicked
     document.body.appendChild(link);
@@ -344,9 +348,15 @@ window.addEventListener("DOMContentLoaded", function() {
     // To make this work on Firefox we need to wait
     // a little while before removing it.
     setTimeout(() => {
-      URL.revokeObjectURL(link.href);
       link.parentNode.removeChild(link);
+      if (cleanup) cleanup();
     }, 0);
+  }
+
+  function exportVocab(contents, type) {
+    let blob = new Blob(contents, {type});
+    let url = URL.createObjectURL(blob);
+    download(url, "chinese-vocab", () => URL.revokeObjectURL(url))
   }
 
   function csvEscape(text) {
@@ -369,10 +379,21 @@ window.addEventListener("DOMContentLoaded", function() {
     let lines = contents.map(opt => keys.map(k => csvEscape(opt[k])).join(",") + "\n");
     // https://docs.ankiweb.net/importing/text-files.html#file-headers
     // https://www.w3.org/International/questions/qa-choosing-language-tags
+    let deckurl = document.location.href.replace(/([^/]+$)$/,"sample.apkg");
+    lines.unshift(`#deckurl:${deckurl}\n`);
+    lines.unshift("#deck:Chinese words from reading list: 拼音, English\n");
     lines.unshift("#notetype:Basic " + keys[0] + ": " + keys.slice(1).join(", ") + "\n");
     lines.unshift("#columns:" + keys + "\n");
     lines.unshift("#separator:Comma\n");
     exportVocab(lines, "text/csv");
+    if (!storage.getItem("lcra-anki-shown")) {
+      if (window.confirm(S("sample-anki-deck"))) {
+        download(deckurl, "sample.apkg");
+      } else {
+        window.alert(S("sample-anki-deck-url"));
+      }
+      storage.setItem("lcra-anki-shown", "1");
+    }
   });
 
   let wordpy = document.getElementById("word-zh-Latn-pinyin");
