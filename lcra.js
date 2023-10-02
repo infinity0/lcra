@@ -2,7 +2,7 @@ let storage = localStorage; // sessionStorage;
 window.addEventListener("DOMContentLoaded", function() {
 
   let langs = ["en", "zh-Hans"];
-  let lang = langs[0];
+  let lang;
   let strings = {
     "confirm": {
       "en": "Are you sure?",
@@ -14,6 +14,10 @@ window.addEventListener("DOMContentLoaded", function() {
     },
     "open-url": {
       "en": "Enter the full URL to open",
+    },
+    "add-a-word": {
+      "en": "First add (⊕) a word",
+      "zh-Hans": "先添加（⊕）个单词",
     },
     "input-or-select": {
       "en": "Please input the word(s) to add, or select some in the article then try again.",
@@ -76,7 +80,7 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  function selectDefaultLanguage(candidates) {
+  function selectLanguage(candidates) {
     for (let l of candidates) {
       if (!l) continue;
       let la = l.split(/-/)[0];
@@ -93,6 +97,10 @@ window.addEventListener("DOMContentLoaded", function() {
     o.scrollIntoView();
   }
 
+  function provisionalPinyin(word) {
+    return PinyinHelper.convertToPinyinString(word, '', PinyinFormat.WITH_TONE_MARK) + "?";
+  }
+
   function addWord(word) {
     let opt = document.createElement("option");
     if (typeof(word) == "object") {
@@ -101,7 +109,7 @@ window.addEventListener("DOMContentLoaded", function() {
       opt.setAttribute("en", word["en"]);
     } else {
       opt.value = word;
-      opt.setAttribute("zh-Latn-pinyin", PinyinHelper.convertToPinyinString(word, '', PinyinFormat.WITH_TONE_MARK) + " ??");
+      opt.setAttribute("zh-Latn-pinyin", provisionalPinyin(word));
       opt.setAttribute("en", "");
     }
     opt.appendChild(document.createTextNode(opt.value));
@@ -128,8 +136,8 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  function loadUI() {
-    lang = storage.getItem("lcra-lang") || selectDefaultLanguage([getQueryVariable("lang"), ...navigator.languages]);
+  function loadUI(extraLanguages) {
+    lang = selectLanguage([...(extraLanguages || []), storage.getItem("lcra-lang"), ...navigator.languages]);
     vocab.replaceChildren([]);
     for (let word of JSON.parse(storage.getItem("lcra-vocab") || "[]")) {
       addWord(word);
@@ -259,6 +267,7 @@ window.addEventListener("DOMContentLoaded", function() {
     if (langs.includes(v)) {
       storage.setItem("lcra-lang", v);
       loadUI();
+      loadWordFromUI();
       loadReferencesFromUI();
     }
   });
@@ -266,6 +275,7 @@ window.addEventListener("DOMContentLoaded", function() {
     if (window.confirm(wipe.title + " - " + S("confirm"))) {
       storage.clear();
       loadUI();
+      loadWordFromUI();
       loadReferencesFromUI();
     }
   });
@@ -336,12 +346,13 @@ window.addEventListener("DOMContentLoaded", function() {
   });
   let delword = document.getElementById("delword");
   delword.addEventListener("click", () => {
-    for (let o of vocab.selectedOptions) {
-      o.remove();
+    let i = vocab.selectedIndex;
+    if (i < 0) {
+      return;
     }
-    if (vocab.options.length) {
-      selectOption(vocab.options[vocab.options.length-1]);
-    }
+    let opt = vocab.options[i];
+    vocab.selectedIndex += (i == vocab.options.length - 1)? -1: 1;
+    opt.remove();
     saveUI();
     loadWordFromUI();
     loadReferencesFromUI();
@@ -393,7 +404,7 @@ window.addEventListener("DOMContentLoaded", function() {
     let lines = contents.map(opt => keys.map(k => csvEscape(opt[k])).join(",") + "\n");
     // https://docs.ankiweb.net/importing/text-files.html#file-headers
     // https://www.w3.org/International/questions/qa-choosing-language-tags
-    let deckurl = document.location.href.replace(/([^/]+$)$/,"sample.apkg");
+    let deckurl = document.location.href.replace(/([^/]*)$/,"sample.apkg");
     lines.unshift(`#deckurl:${deckurl}\n`);
     lines.unshift("#deck:Chinese words from reading list: 拼音, English\n");
     lines.unshift("#notetype:Basic " + keys[0] + ": " + keys.slice(1).join(", ") + "\n");
@@ -410,29 +421,48 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   });
 
+  let wordzh = document.getElementById("word-zh-Hans");
   let wordpy = document.getElementById("word-zh-Latn-pinyin");
   let worden = document.getElementById("word-en");
   function loadWordFromUI() {
     if (vocab.selectedOptions.length) {
       let opt = vocab.selectedOptions[0];
+      wordzh.value = opt.value;
       wordpy.value = opt.getAttribute("zh-Latn-pinyin");
       worden.value = opt.getAttribute("en");
+      for (let el of [wordzh, wordpy, worden]) {
+        el.classList.remove("noword");
+        el.disabled = "";
+      }
     } else {
-      wordpy.value = ""
-      worden.value = ""
+      for (let el of [wordzh, wordpy, worden]) {
+        el.value = S("add-a-word");
+        el.classList.add("noword");
+        el.disabled = "disabled";
+      }
     }
   }
   function saveWordIntoUI() {
     if (vocab.selectedOptions.length) {
       let opt = vocab.selectedOptions[0];
+      opt.value = opt.innerText = wordzh.value;
       opt.setAttribute("zh-Latn-pinyin", wordpy.value);
       opt.setAttribute("en", worden.value);
     }
   }
+  wordzh.addEventListener("input", () => {
+    saveWordIntoUI();
+    saveUI();
+  }, false);
   wordpy.addEventListener("input", () => {
     saveWordIntoUI();
     saveUI();
   }, false);
+  wordpy.addEventListener("dblclick", () => {
+    wordpy.value = provisionalPinyin(wordzh.value);
+    saveWordIntoUI();
+    saveUI();
+  });
   worden.addEventListener("input", () => {
     saveWordIntoUI();
     saveUI();
@@ -527,7 +557,7 @@ window.addEventListener("DOMContentLoaded", function() {
     resizeTO = setTimeout(autoResizeVocab, 125);
   });
 
-  loadUI();
+  loadUI([getQueryVariable("lang")]);
   loadWordFromUI();
   loadReferencesFromUI();
 });

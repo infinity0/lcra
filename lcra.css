@@ -109,6 +109,17 @@ button {
 .secondary {
   font-size: smaller;
 }
+#vocab option[zh-Latn-pinyin*="?"],
+#vocab option[en=""],
+#wordctl .word-details:not(.noword):not(:valid),
+#wordctl .word-details::placeholder,
 .warn {
   color: red;
+}
+#wordctl .noword::placeholder {
+  visibility: hidden;
+}
+#vocab option[value=""],
+#word-zh-Hans:not(.noword):not(:valid) {
+  background-color: #f66;
 }

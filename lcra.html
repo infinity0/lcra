@@ -75,10 +75,13 @@ Drag and drop words here to add">⊕</button>
   </fieldset>
   <fieldset id="wordctl">
     <legend>单词 Word</legend>
-    <div><label for="word-zh-Latn-pinyin">拼音:</label></div>
-    <div><input type="text" id="word-zh-Latn-pinyin" size="1"/></div>
-    <div><label for="word-en">English:</label></div>
-    <div><textarea id="word-en" rows="2" cols="1"></textarea></div>
+    <div><input type="text" class="word-details" id="word-zh-Hans" required
+      placeholder="" placeholder-en="Chinese word" placeholder-zh-Hans="中文单词" /></div>
+    <div><input type="text" class="word-details" id="word-zh-Latn-pinyin" pattern="[^?]*"
+      placeholder="" placeholder-en="Pinyin" placeholder-zh-Hans="拼音"
+      title="" title-en="Double-click to reset to the provisional pinyin"/></div>
+    <div><textarea class="word-details" id="word-en" rows="2" cols="1"
+      placeholder="" placeholder-en="English translation" placeholder-zh-Hans="英文翻译"></textarea></div>
   </fieldset>
   <fieldset>
     <legend>参考 Reference</legend>
@@ -90,18 +93,20 @@ Drag and drop words here to add">⊕</button>
       <option value="baidu" content="" content-en="Baidu Translate" content-zh-Hans="百度翻译"></option>
     </select>
     <div class="secondary">
-      <input type="checkbox" id="reference-proxy" />
-      <label for="reference-proxy"
-        title="" title-en="Use a proxy to bypass anti-iframe policies"
-        content="" content-en="[P] Proxy iframe"></label>
-      <span id="reference-proxy-warn" class="warn"
-        title="" title-en="Proxy will likely negate mobile UI">⚠</span>
-    </div>
-    <div class="secondary">
-      <input type="checkbox" id="reference-mobile" />
-      <label for="reference-mobile"
-        title="" title-en="Request the mobile version of the reference web page."
-        content="" content-en="[M] Mobile UI"></label>
+      <span>
+        <input type="checkbox" id="reference-proxy" />
+        <label for="reference-proxy"
+          title="" title-en="Use a proxy to bypass anti-iframe policies"
+          content="" content-en="[P] Proxy"></label>
+        <span id="reference-proxy-warn" class="warn"
+          title="" title-en="Proxy will likely negate mobile UI">⚠</span>
+      </span>
+      <span>
+        <input type="checkbox" id="reference-mobile" />
+        <label for="reference-mobile"
+          title="" title-en="Request the mobile version of the reference web page."
+          content="" content-en="[M] Mobile"></label>
+      </span>
     </div>
   </fieldset>
 </div>
