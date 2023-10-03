@@ -150,6 +150,7 @@ window.addEventListener("DOMContentLoaded", function() {
     }
     article.value = storage.getItem("lcra-article");
     article.style.display = storageGetBool("lcra-article-hide", false)? "none": "block";
+    artedit.innerText = storageGetBool("lcra-article-edit", true)? "🔒︎": "✎";
     arthide.innerText = storageGetBool("lcra-article-hide", false)? "⇥": "⇤";
     article.disabled = storageGetBool("lcra-article-edit", true)? "": "disabled";
     // purpleculture, our default reference, needs proxy on non-mobile to work
@@ -238,6 +239,7 @@ window.addEventListener("DOMContentLoaded", function() {
   artedit.addEventListener("click", () => {
     article.disabled = (article.disabled)? "": "disabled";
     saveUI();
+    loadUI();
   });
   let artimport = document.getElementById("article-import");
   let artfile = document.getElementById("article-file");
