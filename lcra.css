@@ -47,6 +47,7 @@ main {
 #advanced {
   position: absolute;
   display: none;
+  z-index: 2;
 }
 #advcont:hover #advanced {
   display: block;
@@ -104,6 +105,10 @@ button {
 }
 .secondary {
   font-size: smaller;
+}
+#vocab option.exword,
+#wordctl .exword {
+  opacity: 75%;
 }
 #vocab option[zh-Latn-pinyin*="?"],
 #vocab option[en=""],

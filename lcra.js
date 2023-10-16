@@ -117,6 +117,10 @@ window.addEventListener("DOMContentLoaded", function() {
     return PinyinHelper.convertToPinyinString(word, '', PinyinFormat.WITH_TONE_MARK) + "?";
   }
 
+  function isNotExample(opt) {
+    return !Array.from(opt.classList).includes("exword");
+  }
+
   function addWord(word) {
     let opt = document.createElement("option");
     if (typeof(word) == "object") {
@@ -131,14 +135,24 @@ window.addEventListener("DOMContentLoaded", function() {
     opt.appendChild(document.createTextNode(opt.value));
     vocab.appendChild(opt);
     selectOption(opt);
+    return opt;
   }
 
   function getWords() {
-    return Array.from(vocab.options).map(opt => ({
+    return Array.from(vocab.options).filter(isNotExample).map(opt => ({
       "zh-Hans": opt.value,
       "zh-Latn-pinyin": opt.getAttribute("zh-Latn-pinyin"),
       "en": opt.getAttribute("en")
     }));
+  }
+
+  let exampleWord = getQueryVariable("exword");
+  if (!exampleWord && [null, "", "[]"].includes(lcra_storage.getItem("lcra-vocab"))) {
+    exampleWord = {
+      "zh-Hans": "例子",
+      "zh-Latn-pinyin": "lìzǐ",
+      "en": "example",
+    };
   }
 
   function loadAttr(attr, labels, f) {
@@ -180,10 +194,16 @@ window.addEventListener("DOMContentLoaded", function() {
     for (let word of JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]")) {
       addWord(word);
     }
-    let word = lcra_storage.getItem("lcra-vocab-selected");
-    for (let opt of vocab.options) {
-      if (opt.value == word) {
-        selectOption(opt);
+    if (exampleWord) {
+      let opt = addWord(exampleWord);
+      opt.classList.add("exword");
+      selectOption(opt);
+    } else {
+      let word = lcra_storage.getItem("lcra-vocab-selected");
+      for (let opt of vocab.options) {
+        if (opt.value == word) {
+          selectOption(opt);
+        }
       }
     }
     article.value = lcra_storage.getItem("lcra-article");
@@ -212,7 +232,9 @@ window.addEventListener("DOMContentLoaded", function() {
     lcra_storage.setItem("lcra-lang", lang);
     lcra_storage.setItem("lcra-vocab", JSON.stringify(getWords()));
     for (let opt of vocab.selectedOptions) {
-      lcra_storage.setItem("lcra-vocab-selected", opt.value);
+      if (isNotExample(opt)) {
+        lcra_storage.setItem("lcra-vocab-selected", opt.value);
+      }
     }
     lcra_storage.setItem("lcra-article", article.value);
     lcra_storage.setItem("lcra-article-hide", (article.style.display == "none")? "1": "0");
@@ -392,11 +414,12 @@ window.addEventListener("DOMContentLoaded", function() {
   let delword = document.getElementById("delword");
   delword.addEventListener("click", () => {
     let i = vocab.selectedIndex;
-    if (i < 0) {
-      return;
-    }
+    if (i < 0) return;
     let opt = vocab.options[i];
     vocab.selectedIndex += (i == vocab.options.length - 1)? -1: 1;
+    if (!isNotExample(opt)) {
+      exampleWord = null;
+    }
     opt.remove();
     saveUI();
     loadWordFromUI();
@@ -478,6 +501,11 @@ window.addEventListener("DOMContentLoaded", function() {
       for (let el of [wordzh, wordpy, worden]) {
         el.classList.remove("noword");
         el.disabled = "";
+        if (isNotExample(opt)) {
+          el.classList.remove("exword");
+        } else {
+          el.classList.add("exword");
+        }
       }
     } else {
       for (let el of [wordzh, wordpy, worden]) {
@@ -493,11 +521,18 @@ window.addEventListener("DOMContentLoaded", function() {
       opt.value = opt.innerText = wordzh.value;
       opt.setAttribute("zh-Latn-pinyin", wordpy.value);
       opt.setAttribute("en", worden.value);
+      // any edit on an example automatically saves it
+      opt.classList.remove("exword");
+      exampleWord = null;
+      for (let el of [wordzh, wordpy, worden]) {
+        el.classList.remove("exword");
+      }
     }
   }
   wordzh.addEventListener("input", () => {
     saveWordIntoUI();
     saveUI();
+    loadReferencesFromUI();
   }, false);
   wordpy.addEventListener("input", () => {
     saveWordIntoUI();

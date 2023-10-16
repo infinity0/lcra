@@ -177,30 +177,27 @@ async function baiduTranslate(query, corsProxy, extraHeaders) {
 }
 
 function baiduPrettyPrintDictionary(dres) {
-  let defs = "";
+  let defs = []; // [ py, part, dd ];
   if (dres.synthesize_means && dres.synthesize_means.symbols) {
     // defs for single-char words
-    defs += dres.synthesize_means.symbols.map(sym => {
-      let symdef = sym.parts.map(part => {
-        let subparts = part.means.map(sp => `<li>${sp.word_mean}</li>`).join("");
-        return  `<dt>${sym.word_symbol} – ${part.part_name}</dt><dd><ol>${subparts}</ol></dd>`;
-      }).join("");
-      return symdef;
-    }).join("");
+    defs.push(...dres.synthesize_means.symbols.map(sym => sym.parts.map(part => {
+      let subparts = part.means.map(sp => `<li>${sp.word_mean}</li>`).join("");
+      return  [sym.word_symbol, part.part_name, `<ol>${subparts}</ol>`];
+    })).flat(1));
   }
-  if (!defs && dres.zdict && dres.zdict.simple && dres.zdict.simple.means) {
+  if (dres.zdict && dres.zdict.simple && dres.zdict.simple.means) {
     // defs for multi-char words
     // updated 2023-10-16. we prefer the zdict, as it's:
     // - generally more complete than dres.synthesize_means.cys
     // - generally better structured than dres.simple_means.symbols
-    defs += dres.zdict.simple.means.map(mean => mean.exp.map(ent => {
+    defs.push(...dres.zdict.simple.means.map(mean => mean.exp.map(ent => {
       // Baidu seems to have cut corners on parsing the original source here.
       // Example sentences are interspersed with meanings, which have hard-coded text bullet points
       // We abuse browsers' forgiving parsing of HTML open tags to produce a nice result.
       let r = /^\(\d+\)\s*(.*)$/g;
       let sawEmptyBullet = false;
       let means = ent.des.map(e => {
-        let s = e.main.replace(/\[([^\]].*)\][∶:]?\s*/, (_, s1) => `[${s1.replace(/;\s*/g, "; ")}]: `);
+        let s = e.main.replace(/;\s*/g, "; ").replace(/\[([^\]].*)\][∶:]?\s*/, (_, s1) => `[${s1}]: `);
         let wasEmpty = sawEmptyBullet;
         sawEmptyBullet = false;
         return s.match(r)? s.replace(r, (_, str) => {
@@ -212,8 +209,10 @@ function baiduPrettyPrintDictionary(dres) {
           }
         }): (wasEmpty? `${s}<ul>`: `<li>${s}`);
       }).join("").replace(/^<\/ul>/, "");
-      return `<dt>${mean.pinyin} – 释义</dt><dd><ol>${means}</ol></dd>`;
-    }).join("")).join("");
+      return [mean.pinyin, "释义", `<ol>${means}</ol>`];
+    })).flat(1));
   }
-  return defs;
+  // stable sort on pinyin only
+  defs.sort((x, y) => x[0].localeCompare(y[0], 'zh-CN'));
+  return defs.map(e => `<dt>${e[0]} – ${e[1]}</dt><dd>${e[2]}</dd>`).join("");
 }
