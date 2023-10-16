@@ -188,7 +188,7 @@ window.addEventListener("DOMContentLoaded", function() {
     refui.nextElementSibling.innerText = S("refui-text")[refui_idx];
   }
 
-  function loadUI(extraLanguages) {
+  function loadUI(articleHide, extraLanguages) {
     lang = selectLanguage([...(extraLanguages || []), lcra_storage.getItem("lcra-lang"), ...navigator.languages]);
     vocab.replaceChildren([]);
     for (let word of JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]")) {
@@ -207,7 +207,8 @@ window.addEventListener("DOMContentLoaded", function() {
       }
     }
     article.value = lcra_storage.getItem("lcra-article");
-    article.style.display = storageGetBool("lcra-article-hide", false)? "none": "block";
+    articleHide = (articleHide !== undefined)? articleHide == "true": storageGetBool("lcra-article-hide", false);
+    article.style.display = articleHide? "none": "block";
     artedit.innerText = storageGetBool("lcra-article-edit", true)? "✎": "🔒︎";
     artedit.title = storageGetBool("lcra-article-edit", true)? S("article-unlocked"): S("article-locked");
     arthide.innerText = storageGetBool("lcra-article-hide", false)? "⇥": "⇤";
@@ -642,7 +643,7 @@ window.addEventListener("DOMContentLoaded", function() {
     resizeTO = setTimeout(autoResizeVocab, 125);
   });
 
-  loadUI([getQueryVariable("lang")]);
+  loadUI(getQueryVariable("article-hide"), [getQueryVariable("lang")]);
   loadWordFromUI();
   loadReferencesFromUI();
 });

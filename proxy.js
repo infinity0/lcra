@@ -10,7 +10,7 @@ const shuffleArray = array => {
 
 const LCRA_PROXY = [
   "https://lcra-proxy.infinity0.workers.dev/",
-  "https://lcra-proxy.onrender.com/",
+  //"https://lcra-proxy.onrender.com/", // gets challenged by cloudflare too often
 ];
 
 function lcraProxies() {

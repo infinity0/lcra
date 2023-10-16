@@ -28,7 +28,6 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
   async load (url, options) {
     if (!url || !url.startsWith('http'))
       throw new Error(`X-Frame-Bypass src ${url} does not start with http(s)://`)
-    console.log('X-Frame-Bypass loading:', url, options);
     let origin = new URL(url).origin;
     let srcx = eval(`(${this.getAttribute("src-transform") || "x => x"})`);
     this.srcdoc = `<html>
@@ -116,6 +115,7 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
     const proxies = (options || {}).proxies || this.proxies;
     let e;
     for (let proxy of proxies) {
+      console.log('X-Frame-Bypass loading:', url, 'via', proxy, 'with options', options);
       let res = await fetch(proxy + url, options);
       if (!res.ok) {
         e = new Error(`${res.status} ${res.statusText}`);
