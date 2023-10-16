@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Translate</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="./google.js"></script>
+  <script src="./translate.js"></script>
+  <script src="../proxy.js"></script>
+  <link rel="stylesheet" href="../reset.css" />
+  <link rel="stylesheet" href="../lcra.css" />
+  <link rel="stylesheet" href="./translate.css" />
+  <script>
+    basicTranslate("original", "translation", (input, proxy) => {
+      return googleTranslate(input, 'zh-CN', 'en', proxy);
+    }, res => res.text, lcraProxies());
+  </script>
+  </head>
+<body>
+<h1>Google Translate</h1>
+<fieldset>
+  <legend>中文 Chinese</legend>
+  <div class="result" id="original" contenteditable="true"></div>
+</fieldset>
+<fieldset>
+  <legend>英文 English</legend>
+  <div class="result" id="translation"></div>
+</fieldset>
+<div>
+  <h2>Disclaimer:</h2>
+  <p>The correct translation of the text, and even its pronunciation, may vary depending on its context in the original source. <strong>This is especially true for single-character words in Chinese</strong>, for example "一" mostly means "one" but can also mean "as soon as" in particular contexts.</p>
+  <p>Google Translate only shows us what it thinks is the most likely translation <strong>given zero context</strong>, not all possible translations across all possible contexts.</p>
+  <p>You should only use this result in conjunction with the other references, that list all possible definitions or translations of a given word or phrase.</p>
+  <p>Click the link below to open up the main Google Translate website in a new window, e.g. if you want to experiment with adding different contexts and seeing how this affects the translation.</p>
+</div>
+</body>
+</html>

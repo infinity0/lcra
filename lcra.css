@@ -78,20 +78,16 @@ fieldset > *:last-child {
   height: 100%;
 }
 .frameurl {
-  display: block;
+  display: inline-block;
   position: absolute;
   bottom: 0;
-  width: 100%;
-}
-.frameurl > span {
-  display: inline-block;
   background-color: color-mix(in srgb, currentColor 66%, transparent);
   filter: invert(100%);
 }
-.frameurl > span > a {
+.frameurl > a {
   filter: invert(100%);
 }
-.frameurl > span > a > span::after {
+.frameurl > a > span::after {
   display: inline-block;
   transform: scaleX(-1);
   content: "⎋ ";

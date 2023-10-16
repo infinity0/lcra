@@ -1,0 +1,15 @@
+div {
+  padding: 0 1ex;
+}
+body > * {
+  margin: 1ex 0;
+}
+p {
+  margin: 1em 0;
+}
+.result {
+  font-size: 150%;
+}
+.error {
+  white-space: pre;
+}

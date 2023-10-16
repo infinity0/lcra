@@ -1,4 +1,16 @@
-let storage = localStorage; // sessionStorage;
+let lcra_storage = localStorage; // sessionStorage;
+
+function lcra_detectMobile() {
+  if (navigator.userAgent.search(/\b(iphone|ipad|ipod|webos|android|mobile|phone)\b/i) >= 0) {
+    // some tablets have UAD.mobile false even though they're running an Android browser
+    return true;
+  } else if (navigator.userAgentData) {
+    return navigator.userAgentData.mobile;
+  } else {
+    return false;
+  }
+}
+
 window.addEventListener("DOMContentLoaded", function() {
 
   let langs = ["en", "zh-Hans"];
@@ -11,6 +23,12 @@ window.addEventListener("DOMContentLoaded", function() {
     "lang-code": {
       "en": "Enter language code, one of: ",
       "zh-Hans": "输入语言代码，其中之一：",
+    },
+    "article-unlocked": {
+      "en": "Article is unlocked for editing. Click to lock.",
+    },
+    "article-locked": {
+      "en": "Article is locked to prevent accidental edits. Click to edit.",
     },
     "open-url": {
       "en": "Enter the full URL to open",
@@ -27,8 +45,8 @@ window.addEventListener("DOMContentLoaded", function() {
       "en": "may not be a word. Really add?",
       "zh-Hans": "可能不是单词。真的添加？",
     },
-    "set-mobile": {
-      "en": "Set this in your browser's Developer Tools. Some browsers require you to reload the page afterwards.",
+    "refui-text": {
+      "en": ["Desktop UI", "Mobile UI", "Auto UI (Desktop)", "Auto UI (Mobile)"],
     },
     "sample-anki-deck": {
       "en": "Also download a sample Anki deck for importing the CSV into?",
@@ -57,12 +75,10 @@ window.addEventListener("DOMContentLoaded", function() {
   let references = document.getElementsByClassName("reference");
   let refselect = document.getElementById("refselect");
   let refurl = document.getElementById("refurl").querySelector("a");
-  let refproxy = document.getElementById("reference-proxy");
-  let refproxywarn = document.getElementById("reference-proxy-warn");
-  let refmobile = document.getElementById("reference-mobile");
+  let refui = document.getElementById("refui");
 
   function storageGetBool(key, def) {
-    switch (storage.getItem(key)) {
+    switch (lcra_storage.getItem(key)) {
       case "0": return false;
       case "1": return true;
       default: return def;
@@ -125,9 +141,9 @@ window.addEventListener("DOMContentLoaded", function() {
     }));
   }
 
-  function loadLang(attr, f) {
+  function loadAttr(attr, labels, f) {
     for (let el of document.querySelectorAll("*[" + attr + "]")) {
-      for (let l of [lang, ...langs]) {
+      for (let l of labels) {
         if (el.hasAttribute(attr + "-" + l)) {
           f(el, el.getAttribute(attr + "-" + l));
           break;
@@ -136,69 +152,87 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }
 
+  function loadLang(attr, f) {
+    loadAttr(attr, [lang, ...langs], f);
+  }
+  
+  const REFUI_ICONS = ["💻︎", "📱︎", "💻︎*", "📱︎*"];
+
+  function preloadRefUI() {
+    switch (lcra_storage.getItem("lcra-reference-ui")) {
+      case "desktop":
+        return 0;
+      case "mobile":
+        return 1;
+      default:
+        return 2 + Number(lcra_detectMobile());
+    }
+  }
+
+  function setRefUI(refui_idx) {
+    refui.innerText = REFUI_ICONS[refui_idx];
+    refui.nextElementSibling.innerText = S("refui-text")[refui_idx];
+  }
+
   function loadUI(extraLanguages) {
-    lang = selectLanguage([...(extraLanguages || []), storage.getItem("lcra-lang"), ...navigator.languages]);
+    lang = selectLanguage([...(extraLanguages || []), lcra_storage.getItem("lcra-lang"), ...navigator.languages]);
     vocab.replaceChildren([]);
-    for (let word of JSON.parse(storage.getItem("lcra-vocab") || "[]")) {
+    for (let word of JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]")) {
       addWord(word);
     }
-    let word = storage.getItem("lcra-vocab-selected");
+    let word = lcra_storage.getItem("lcra-vocab-selected");
     for (let opt of vocab.options) {
       if (opt.value == word) {
         selectOption(opt);
       }
     }
-    article.value = storage.getItem("lcra-article");
+    article.value = lcra_storage.getItem("lcra-article");
     article.style.display = storageGetBool("lcra-article-hide", false)? "none": "block";
-    artedit.innerText = storageGetBool("lcra-article-edit", true)? "🔒︎": "✎";
+    artedit.innerText = storageGetBool("lcra-article-edit", true)? "✎": "🔒︎";
+    artedit.title = storageGetBool("lcra-article-edit", true)? S("article-unlocked"): S("article-locked");
     arthide.innerText = storageGetBool("lcra-article-hide", false)? "⇥": "⇤";
     article.disabled = storageGetBool("lcra-article-edit", true)? "": "disabled";
-    // purpleculture, our default reference, needs proxy on non-mobile to work
-    refproxy.checked = storageGetBool("lcra-reference-proxy", !detectMobile());
-    refselect.value = storage.getItem("lcra-reference") || "purpleculture";
+    setRefUI(preloadRefUI());
+    refselect.value = lcra_storage.getItem("lcra-reference") || "purpleculture";
     loadLang("content", (el, v) => { el.innerText = v; });
     loadLang("title", (el, v) => { el.title = v; });
     loadLang("placeholder", (el, v) => { el.setAttribute("placeholder", v); });
     autoResizeVocab();
   }
 
-  function saveUI() {
-    storage.setItem("lcra-lang", lang);
-    storage.setItem("lcra-vocab", JSON.stringify(getWords()));
-    for (let opt of vocab.selectedOptions) {
-      storage.setItem("lcra-vocab-selected", opt.value);
+  function presaveRefUI() {
+    switch (REFUI_ICONS.indexOf(refui.innerText)) {
+      case 0: return "desktop";
+      case 1: return "mobile";
+      default: return "auto";
     }
-    storage.setItem("lcra-article", article.value);
-    storage.setItem("lcra-article-hide", (article.style.display == "none")? "1": "0");
-    storage.setItem("lcra-article-edit", (article.disabled)? "0": "1");
-    storage.setItem("lcra-reference-proxy", (refproxy.checked)? "1": "0");
-    storage.setItem("lcra-reference", refselect.value);
+  }
+
+  function saveUI() {
+    lcra_storage.setItem("lcra-lang", lang);
+    lcra_storage.setItem("lcra-vocab", JSON.stringify(getWords()));
+    for (let opt of vocab.selectedOptions) {
+      lcra_storage.setItem("lcra-vocab-selected", opt.value);
+    }
+    lcra_storage.setItem("lcra-article", article.value);
+    lcra_storage.setItem("lcra-article-hide", (article.style.display == "none")? "1": "0");
+    lcra_storage.setItem("lcra-article-edit", (article.disabled)? "0": "1");
+    lcra_storage.setItem("lcra-reference-ui", presaveRefUI());
+    lcra_storage.setItem("lcra-reference", refselect.value);
   }
 
   function loadFrame(el, url, reload) {
-    if (reload === false && el.src == url) {
+    if (reload !== true && el.src == new URL(url, document.baseURI).href) {
       return;
     }
     if (reload === true && el.clearSrc) {
       el.clearSrc();
     }
-    let i = url.indexOf("#");
-    if (i < 0 || reload !== true) {
-      el.src = url;
-    } else {
-      // browsers don't reload #-URLs in iframes properly, we force it here
-      el.src = url.substring(0, i);
-      let f = () => {
-        el.src = url;
-        el.removeEventListener("load", f);
-      };
-      el.addEventListener("load", f);
-    }
+    el.src = url;
   }
 
-  function makeFrameUrl(el, word) {
-    let url = el.getAttribute("urlpat");
-    return url.replace(/XX/, encodeURIComponent(word)).replace(/TT/, encodeURIComponent(zhtw(word)));
+  function makeFrameUrl(urlpat, word) {
+    return urlpat.replace(/XX/, encodeURIComponent(word)).replace(/TT/, encodeURIComponent(zhtw(word)));
   }
 
   function showFrameUrl(el, url, label) {
@@ -212,19 +246,28 @@ window.addEventListener("DOMContentLoaded", function() {
   function loadReferencesFromUI(reload) {
     let word = vocab.value;
 
+    let refui_ty = (REFUI_ICONS.indexOf(refui.innerText) & 1)? "mobile": "desktop";
+    for (let a of ["cors-headers", "urlpat", "refurlpat", "use-proxy-if"]) {
+      loadAttr(a, [refui_ty], (el, v) => { el.setAttribute(a, v); });
+    }
+
     for (let el of references) {
-      if ("proxyEnabled" in el) {
-        el.proxyEnabled = refproxy.checked;
+      if ("proxies" in el) {
+        let proxy = eval(el.getAttribute("use-proxy-if"));
+        //console.log("proxy", el.id, proxy);
+        el.proxies = proxy? lcraProxies(): [];
       }
-      loadFrame(el, makeFrameUrl(el, word), reload);
-      el.style.display = "none";
+      let urlpat = el.getAttribute("urlpat");
+      // setting display: none prevents some browsers from scrolling to #-URLs
+      el.style.visibility = (refselect.value == el.id)? "visible": "hidden";
+      loadFrame(el, makeFrameUrl(urlpat, word), reload);
     }
     let url = "";
     let label = "";
     if (refselect.value && vocab.selectedOptions.length) {
       let el = document.getElementById(refselect.value);
-      el.style.display = "block";
-      url = makeFrameUrl(el, word);
+      let urlpat = el.hasAttribute("refurlpat")? el.getAttribute("refurlpat"): el.getAttribute("urlpat");
+      url = makeFrameUrl(urlpat, word);
       label = refselect.selectedOptions[0].innerText.split("[")[0].replace(/ *$/g,"") + " - " + word;
     }
     showFrameUrl(refurl, url, label);
@@ -267,7 +310,7 @@ window.addEventListener("DOMContentLoaded", function() {
   setlang.addEventListener("click", () => {
     let v = window.prompt(S("lang-code") + langs, lang);
     if (langs.includes(v)) {
-      storage.setItem("lcra-lang", v);
+      lcra_storage.setItem("lcra-lang", v);
       loadUI();
       loadWordFromUI();
       loadReferencesFromUI();
@@ -275,7 +318,7 @@ window.addEventListener("DOMContentLoaded", function() {
   });
   wipe.addEventListener("click", () => {
     if (window.confirm(wipe.title + " - " + S("confirm"))) {
-      storage.clear();
+      lcra_storage.clear();
       loadUI();
       loadWordFromUI();
       loadReferencesFromUI();
@@ -396,13 +439,13 @@ window.addEventListener("DOMContentLoaded", function() {
 
   let exportJson = document.getElementById("vocab-export-json");
   exportJson.addEventListener("click", () => {
-    let contents = JSON.parse(storage.getItem("lcra-vocab") || "[]");
+    let contents = JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]");
     exportVocab([JSON.stringify(contents, null, 1)], "application/json");
   });
   let exportCsv = document.getElementById("vocab-export-csv");
   exportCsv.addEventListener("click", () => {
     let keys = "zh-Hans,zh-Latn-pinyin,en".split(",");
-    let contents = JSON.parse(storage.getItem("lcra-vocab") || "[]");
+    let contents = JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]");
     let lines = contents.map(opt => keys.map(k => csvEscape(opt[k])).join(",") + "\n");
     // https://docs.ankiweb.net/importing/text-files.html#file-headers
     // https://www.w3.org/International/questions/qa-choosing-language-tags
@@ -413,13 +456,13 @@ window.addEventListener("DOMContentLoaded", function() {
     lines.unshift("#columns:" + keys + "\n");
     lines.unshift("#separator:Comma\n");
     exportVocab(lines, "text/csv");
-    if (!storage.getItem("lcra-anki-shown")) {
+    if (!lcra_storage.getItem("lcra-anki-shown")) {
       if (window.confirm(S("sample-anki-deck"))) {
         download(deckurl, "sample.apkg");
       } else {
         window.alert(S("sample-anki-deck-url"));
       }
-      storage.setItem("lcra-anki-shown", "1");
+      lcra_storage.setItem("lcra-anki-shown", "1");
     }
   });
 
@@ -474,18 +517,30 @@ window.addEventListener("DOMContentLoaded", function() {
     saveUI();
     loadReferencesFromUI();
   });
-  refproxy.addEventListener("change", () => {
+  refui.addEventListener("click", () => {
+    let old_idx = REFUI_ICONS.indexOf(refui.innerText);
+    let mob = Number(lcra_detectMobile());
+    let new_idx;
+    switch (old_idx) {
+    case 0:
+      new_idx = mob? 1: 2;
+      break;
+    case 1:
+      new_idx = mob? 3: 0;
+      break;
+    case 2:
+      new_idx = 1;
+      break;
+    case 3:
+      new_idx = 0;
+      break;
+    }
+    setRefUI(new_idx);
     saveUI();
-    loadReferencesFromUI(true);
+    if ((old_idx & 1) != (new_idx & 1)) {
+      loadReferencesFromUI(true);
+    }
   });
-  refproxywarn.addEventListener("click", () => {
-    window.alert(refproxywarn.title);
-  });
-  refmobile.parentNode.addEventListener("click", (e) => {
-    window.alert(S("set-mobile"));
-    e.stopPropagation();
-    e.preventDefault();
-  }, true);
 
   // experimental anti-frame-busting code for Google Translate / Baidu Translate
   // it doesn't appear to work unfortunately
@@ -501,22 +556,15 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }, 1);*/
 
-  function detectMobile() {
-    if (navigator.userAgent.search(/\b(iphone|ipad|ipod|webos|android|mobile|phone)\b/i) >= 0) {
-      // some tablets have UAD.mobile false even though they're running an Android browser
-      return true;
-    } else if (navigator.userAgentData) {
-      return navigator.userAgentData.mobile;
-    } else {
-      return false;
-    }
-  }
   setInterval(() => {
-    if (refmobile.checked != detectMobile()) {
-      refmobile.checked = detectMobile();
-      loadReferencesFromUI(true);
+    let refui_idx = REFUI_ICONS.indexOf(refui.innerText);
+    if (refui_idx >= 2) {
+      let mob = Number(lcra_detectMobile());
+      if (refui_idx - 2 != mob) {
+        setRefUI(2 + mob);
+        loadReferencesFromUI(true);
+      }
     }
-    refproxywarn.style.display = (refmobile.checked && refproxy.checked)? "inline": "none";
   }, 4);
 
   function autoResizeVocab() {

@@ -1,4 +1,4 @@
-// slightly adapted from https://niutech.github.io/x-frame-bypass/x-frame-bypass.js
+// adapted from https://niutech.github.io/x-frame-bypass/x-frame-bypass.js
 customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
   static get observedAttributes() {
     return ['src']
@@ -6,25 +6,31 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
   constructor () {
     super()
   }
-  proxyEnabled = true;
+  proxies = [];
   clearSrc () {
     this.removeAttribute("src");
     delete this.src;
     this.removeAttribute("srcdoc");
     delete this.srcdoc;
   }
-  attributeChangedCallback (e) {
-    if (this.proxyEnabled && this.src) {
-      this.load(this.src)
+  async attributeChangedCallback (e) {
+    if (this.proxies.length && this.src) {
+      this.load(this.src, {
+        headers: {
+          "X-Cors-Headers": this.getAttribute("cors-headers") || "{}",
+        }
+      })
     }
   }
   connectedCallback () {
-    this.sandbox = '' + this.sandbox || 'allow-forms allow-modals allow-scripts'
+    this.sandbox = '' + this.sandbox || 'allow-forms allow-modals allow-scripts allow-same-origin'
   }
-  load (url, options) {
+  async load (url, options) {
     if (!url || !url.startsWith('http'))
       throw new Error(`X-Frame-Bypass src ${url} does not start with http(s)://`)
-    console.log('X-Frame-Bypass loading:', url)
+    console.log('X-Frame-Bypass loading:', url, options);
+    let origin = new URL(url).origin;
+    let srcx = eval(`(${this.getAttribute("src-transform") || "x => x"})`);
     this.srcdoc = `<html>
 <head>
   <style>
@@ -53,11 +59,27 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
   <div class="loader"></div>
 </body>
 </html>`
-    this.fetchProxy(url, options, 0).then(res => res.text()).then(data => {
+    try {
+      let [proxy, resp] = await this.fetchProxy(url, options, 0);
+      let data = await resp.text();
       if (data)
-        this.srcdoc = data.replace(/<head([^>]*)>/i, `<head$1>
+        this.srcdoc = srcx(data.replace(/<head([^>]*)>/i, `<head$1>
   <base href="${url}">
   <script>
+  // Proxy XMLHttpRequest as well
+  (function(xhr) {
+    var open = xhr.open;
+    xhr.open = function(method, url, async) {
+      if (url.startsWith("${origin}")) {
+        url = "${proxy}" + url;
+      } else if (url.startsWith("/")) {
+        url = "${proxy}" + "${origin}" + url;
+      }
+      //console.log("intercepted XMLHttpRequest.open", arguments);
+      return open.apply(this, arguments);
+    };
+  })(XMLHttpRequest.prototype);
+
   // X-Frame-Bypass navigation event handlers
   document.addEventListener('click', e => {
     if (frameElement && document.activeElement && document.activeElement.href) {
@@ -74,6 +96,7 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
         frameElement.load(document.activeElement.form.action + '?' + new URLSearchParams(new FormData(document.activeElement.form)))
     }
   })
+
   // Scroll #-URLs properly into view.
   document.addEventListener('DOMContentLoaded', e => {
     let url = "${url}";
@@ -84,23 +107,23 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
       if (el) el.scrollIntoView();
     }
   })
-  </script>`)
-    }).catch(e => console.error('Cannot load X-Frame-Bypass:', e))
+  </script>`));
+    } catch (e) {
+      console.error('Cannot load X-Frame-Bypass:', e)
+    }
   }
-  fetchProxy (url, options, i) {
-    const proxies = (options || {}).proxies || [
-      'https://cors-anywhere.herokuapp.com/',
-      'https://yacdn.org/proxy/',
-      'https://api.codetabs.com/v1/proxy/?quest='
-    ]
-    return fetch(proxies[i] + url, options).then(res => {
-      if (!res.ok)
-        throw new Error(`${res.status} ${res.statusText}`);
-      return res
-    }).catch(error => {
-      if (i === proxies.length - 1)
-        throw error
-      return this.fetchProxy(url, options, i + 1)
-    })
+  async fetchProxy (url, options) {
+    const proxies = (options || {}).proxies || this.proxies;
+    let e;
+    for (let proxy of proxies) {
+      let res = await fetch(proxy + url, options);
+      if (!res.ok) {
+        e = new Error(`${res.status} ${res.statusText}`);
+        continue;
+      } else {
+        return [proxy, res];
+      }
+    }
+    throw e;
   }
 }, {extends: 'iframe'})
