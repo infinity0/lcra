@@ -9,6 +9,20 @@ html, body {
   left: -1000px;
 }
 
+/* Work around https://github.com/ankidroid/Anki-Android/issues/14547 */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: white;
+    color: black;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: black;
+    color: white;
+  }
+}
+
 /* main layout */
 main {
   display: flex;
