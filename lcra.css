@@ -37,6 +37,7 @@ main {
 }
 #article {
   flex: 9 9 56.25%;
+  padding: 0.5ex;
 }
 #control {
   min-width: 8em;
@@ -73,12 +74,19 @@ main {
 
 /* control sublayout */
 fieldset {
+  margin: 0.5ex 0;
   padding: 0.5ex 0.25ex;
+}
+fieldset:first-child {
+  margin-top: 0;
+}
+fieldset:last-child {
+  margin-bottom: 0;
 }
 fieldset > :not(legend), #advanced > * {
   margin: 0.5ex 0;
 }
-fieldset > *:first-child {
+fieldset > *:nth-child(2) { /* first child is the legend */
   margin-top: 0;
 }
 fieldset > *:last-child {
@@ -120,6 +128,9 @@ button {
 }
 .secondary {
   font-size: smaller;
+}
+textarea {
+  resize: none;
 }
 #vocab option.exword,
 #wordctl .exword {

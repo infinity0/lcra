@@ -1,15 +1,23 @@
-div {
-  padding: 0 1ex;
+body {
+  padding: 1ex;
 }
-body > * {
-  margin: 1ex 0;
+h1, h2 {
+  margin-top: 1.5ex;
+  margin-bottom: 1ex;
 }
 p {
   margin: 1em 0;
+}
+fieldset {
+  margin: 1ex 0;
+  padding: 1ex;
 }
 .result {
   font-size: 150%;
 }
 .error {
   white-space: pre;
+}
+#disclaimer {
+  font-size: 85%;
 }

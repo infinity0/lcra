@@ -177,20 +177,21 @@ async function baiduTranslate(query, corsProxy, extraHeaders) {
 }
 
 function baiduPrettyPrintDictionary(dres) {
-  let defs = []; // [ py, part, dd ];
+  let defs = {}; // { py: { part: dd } };
   if (dres.synthesize_means && dres.synthesize_means.symbols) {
     // defs for single-char words
-    defs.push(...dres.synthesize_means.symbols.map(sym => sym.parts.map(part => {
+    dres.synthesize_means.symbols.map(sym => sym.parts.map(part => {
       let subparts = part.means.map(sp => `<li>${sp.word_mean}</li>`).join("");
-      return  [sym.word_symbol, part.part_name, `<ol>${subparts}</ol>`];
-    })).flat(1));
+      let k = sym.word_symbol;
+      (defs[k] ||= {})[part.part_name] = `<ol>${subparts}</ol>`;
+    }));
   }
   if (dres.zdict && dres.zdict.simple && dres.zdict.simple.means) {
     // defs for multi-char words
     // updated 2023-10-16. we prefer the zdict, as it's:
     // - generally more complete than dres.synthesize_means.cys
     // - generally better structured than dres.simple_means.symbols
-    defs.push(...dres.zdict.simple.means.map(mean => mean.exp.map(ent => {
+    dres.zdict.simple.means.map(mean => mean.exp.map(ent => {
       // Baidu seems to have cut corners on parsing the original source here.
       // Example sentences are interspersed with meanings, which have hard-coded text bullet points
       // We abuse browsers' forgiving parsing of HTML open tags to produce a nice result.
@@ -209,10 +210,13 @@ function baiduPrettyPrintDictionary(dres) {
           }
         }): (wasEmpty? `${s}<ul>`: `<li>${s}`);
       }).join("").replace(/^<\/ul>/, "");
-      return [mean.pinyin, "释义", `<ol>${means}</ol>`];
-    })).flat(1));
+      let k = mean.pinyin;
+      (defs[k] ||= {})["释义"] = `<ol>${means}</ol>`;
+    }));
   }
-  // stable sort on pinyin only
-  defs.sort((x, y) => x[0].localeCompare(y[0], 'zh-CN'));
-  return defs.map(e => `<dt>${e[0]} – ${e[1]}</dt><dd>${e[2]}</dd>`).join("");
+  return Object.entries(defs).map(([k, ent]) =>
+    Object.entries(ent).map(([p, v]) =>
+      `<dt>${k} – ${p}</dt><dd>${v}</dd>`
+    ).join("")
+  ).join("");
 }

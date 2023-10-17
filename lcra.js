@@ -613,6 +613,7 @@ window.addEventListener("DOMContentLoaded", function() {
     }
     vocab.size = 1;
     let oh = vocab.offsetHeight;
+    let w = control.clientWidth;
     let h = histctl.offsetHeight;
     for (let i = 0; i < 128; i++) {
       vocab.size++;
@@ -620,7 +621,8 @@ window.addEventListener("DOMContentLoaded", function() {
         // some browsers don't support resizing a <select>
         break;
       }
-      if (histctl.offsetHeight > h) {
+      // sometimes browsers add redundant scrollbars, check clientWidth to prevent this
+      if (histctl.offsetHeight > h || control.clientWidth < w) {
         let s = vocab.size - 1;
         vocab.size = 1;
         // give the browser some time to remove the scrollbars
