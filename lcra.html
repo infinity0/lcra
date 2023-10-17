@@ -36,6 +36,7 @@ placeholder-en="Basic instructions:
 7. Don't worry about leaving this web page: when you come back the data you input will still be here.
 ">
 </textarea>
+<script>lcra_articleHide(true); // helps to prevent UI flickers</script>
 <div id="control">
   <fieldset>
     <legend>文章 Article</legend>
@@ -45,7 +46,7 @@ placeholder-en="Basic instructions:
 Hiding helps you read in an article in another window:
 Place that and this window side-by-side, then drag words
 from there and drop them into the add button (⊕) here.">⇤</button>
-      <button id="article-edit" title=""></button>
+      <button id="article-edit" title="">✎</button>
       <button id="article-import" title="" title-en="Import article text">⇧</button>
     </div>
     <div id="advcont" style="float: right;">
@@ -61,7 +62,9 @@ from there and drop them into the add button (⊕) here.">⇤</button>
   <fieldset id="histctl">
     <legend>词汇 Vocabulary</legend>
     <select id="vocab" size="8" title=""
-      title-en="Drag and drop words here to add"></select>
+      title-en="Drag and drop words here to add">
+      <option value="例子" class="exword"></option>
+    </select>
     <div style="float: left;">
       <button id="addword" title="" title-en="Add selected words from article, or
 Prompt for words to add, or
@@ -76,13 +79,13 @@ Drag and drop words here to add">⊕</button>
   </fieldset>
   <fieldset id="wordctl">
     <legend>单词 Word</legend>
-    <div><input type="text" class="word-details" id="word-zh-Hans" required
+    <div><input type="text" class="word-details" id="word-zh-Hans" required value="例子"
       placeholder="" placeholder-en="Edit Chinese word" placeholder-zh-Hans="编辑中文单词" /></div>
-    <div><input type="text" class="word-details" id="word-zh-Latn-pinyin" pattern="[^?]*"
+    <div><input type="text" class="word-details" id="word-zh-Latn-pinyin" pattern="[^?]*" value="lìzi"
       placeholder="" placeholder-en="Edit Pinyin" placeholder-zh-Hans="编辑拼音"
       title="" title-en="Double-click to reset to the provisional pinyin"/></div>
     <div><textarea class="word-details" id="word-en" rows="2" cols="1"
-      placeholder="" placeholder-en="Edit English translation" placeholder-zh-Hans="编辑英文翻译"></textarea></div>
+      placeholder="" placeholder-en="Edit English translation" placeholder-zh-Hans="编辑英文翻译">example</textarea></div>
   </fieldset>
   <fieldset>
     <legend>参考 Reference</legend>
@@ -96,8 +99,8 @@ Drag and drop words here to add">⊕</button>
     </select>
     <div class="secondary">
       <span>
-        <button id="refui" title="" title-en="Click to switch between desktop and mobile UIs for the reference website, if any"></button>
-        <label for="refui"></label>
+        <button id="refui" title="" title-en="Click to switch between desktop and mobile UIs for the reference website, if any">***</button>
+        <label for="refui">Loading UI...</label>
       </span>
     </div>
   </fieldset>

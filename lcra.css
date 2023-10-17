@@ -39,7 +39,8 @@ main {
   flex: 9 9 56.25%;
 }
 #control {
-  min-width: 12em;
+  min-width: 8em;
+  max-width: 12em;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
