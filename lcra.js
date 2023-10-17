@@ -72,6 +72,7 @@ window.addEventListener("DOMContentLoaded", function() {
   let setlang = document.getElementById("setlang");
   let wipe = document.getElementById("wipe");
   let vocab = document.getElementById("vocab");
+  let histctl = document.getElementById("histctl");
   let references = document.getElementsByClassName("reference");
   let refselect = document.getElementById("refselect");
   let refurl = document.getElementById("refurl").querySelector("a");
