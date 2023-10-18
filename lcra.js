@@ -117,8 +117,15 @@ window.addEventListener("DOMContentLoaded", function() {
     return PinyinHelper.convertToPinyinString(word, '', PinyinFormat.WITH_TONE_MARK) + "?";
   }
 
-  function isNotExample(opt) {
-    return !Array.from(opt.classList).includes("exword");
+  function isExample(opt) {
+    return Array.from(opt.classList).includes("exword");
+  }
+
+  function unsetIfExample(opt) {
+    let wasExample = isExample(opt);
+    opt.classList.remove("exword");
+    exampleWord = null;
+    return wasExample;
   }
 
   function addWord(word) {
@@ -138,8 +145,16 @@ window.addEventListener("DOMContentLoaded", function() {
     return opt;
   }
 
+  function findWordOpt(word) {
+    for (let opt of vocab.options) {
+      if (opt.value == word) {
+        return opt;
+      }
+    }
+  }
+
   function getWords() {
-    return Array.from(vocab.options).filter(isNotExample).map(opt => ({
+    return Array.from(vocab.options).filter(o => !isExample(o)).map(opt => ({
       "zh-Hans": opt.value,
       "zh-Latn-pinyin": opt.getAttribute("zh-Latn-pinyin"),
       "en": opt.getAttribute("en")
@@ -188,22 +203,21 @@ window.addEventListener("DOMContentLoaded", function() {
       addWord(word);
     }
     if (reinit) {
-      exampleWord = searchParams.get("exword") || (vocab.options.length? null: {
-        "zh-Hans": "例子",
-        "zh-Latn-pinyin": "lìzi",
-        "en": "example",
-      });
+      exampleWord = searchParams.get("exword") || (vocab.options.length? null: "例子");
     }
     if (exampleWord) {
-      let opt = addWord(exampleWord);
-      opt.classList.add("exword");
-      selectOption(opt);
+      let found = findWordOpt(exampleWord);
+      if (found) {
+        selectOption(found);
+      } else {
+        let opt = addWord(exampleWord);
+        opt.classList.add("exword");
+        selectOption(opt);
+      }
     } else {
-      let word = lcra_storage.getItem("lcra-vocab-selected");
-      for (let opt of vocab.options) {
-        if (opt.value == word) {
-          selectOption(opt);
-        }
+      let found = findWordOpt(lcra_storage.getItem("lcra-vocab-selected"));
+      if (found) {
+        selectOption(found);
       }
     }
     article.value = lcra_storage.getItem("lcra-article");
@@ -233,7 +247,7 @@ window.addEventListener("DOMContentLoaded", function() {
     lcra_storage.setItem("lcra-lang", lang);
     lcra_storage.setItem("lcra-vocab", JSON.stringify(getWords()));
     for (let opt of vocab.selectedOptions) {
-      if (isNotExample(opt)) {
+      if (!isExample(opt)) {
         lcra_storage.setItem("lcra-vocab-selected", opt.value);
       }
     }
@@ -359,18 +373,17 @@ window.addEventListener("DOMContentLoaded", function() {
       }
       // empty string is not a word
       if (!w) continue;
-      // if word is already in the vocab, select it but don't add a new one
-      let found = false;
-      for (let o of vocab.options) {
-        if (w == o.value) {
-          selectOption(o);
-          found = true;
-          break;
-        }
-      }
-      // only add the word if it was not already there
-      if (!found) {
+      let found = findWordOpt(w);
+      if (found) {
+        selectOption(found);
+        unsetIfExample(found);
+      } else {
         addWord(w);
+      }
+    }
+    for (let o of vocab.options) {
+      if (unsetIfExample(o)) {
+        o.remove();
       }
     }
     saveUI();
@@ -419,9 +432,7 @@ window.addEventListener("DOMContentLoaded", function() {
     if (i < 0) return;
     let opt = vocab.options[i];
     vocab.selectedIndex += (i == vocab.options.length - 1)? -1: 1;
-    if (!isNotExample(opt)) {
-      exampleWord = null;
-    }
+    unsetIfExample(opt);
     opt.remove();
     saveUI();
     loadWordFromUI();
@@ -503,10 +514,10 @@ window.addEventListener("DOMContentLoaded", function() {
       for (let el of [wordzh, wordpy, worden]) {
         el.classList.remove("noword");
         el.disabled = "";
-        if (isNotExample(opt)) {
-          el.classList.remove("exword");
-        } else {
+        if (isExample(opt)) {
           el.classList.add("exword");
+        } else {
+          el.classList.remove("exword");
         }
       }
     } else {
@@ -523,9 +534,7 @@ window.addEventListener("DOMContentLoaded", function() {
       opt.value = opt.innerText = wordzh.value;
       opt.setAttribute("zh-Latn-pinyin", wordpy.value);
       opt.setAttribute("en", worden.value);
-      // any edit on an example automatically saves it
-      opt.classList.remove("exword");
-      exampleWord = null;
+      unsetIfExample(opt); // any edit on an example automatically saves it
       for (let el of [wordzh, wordpy, worden]) {
         el.classList.remove("exword");
       }
@@ -624,7 +633,7 @@ window.addEventListener("DOMContentLoaded", function() {
       // sometimes browsers add redundant scrollbars, check clientWidth to prevent this
       if (histctl.offsetHeight > h || control.clientWidth < w) {
         let s = vocab.size - 1;
-        vocab.size = 1;
+        vocab.size = Math.max(s - 1, 1);
         // give the browser some time to remove the scrollbars
         setTimeout(() => {
           vocab.size = s;

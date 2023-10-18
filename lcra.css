@@ -132,21 +132,30 @@ button {
 textarea {
   resize: none;
 }
-#vocab option.exword,
-#wordctl .exword {
-  opacity: 75%;
+::placeholder {
+  /* browsers don't do this by default!!
+  it's needed to make our &.exword usage fully work below. */
+  color: inherit;
+}
+#vocab option, #wordctl .word-details {
+  color: FieldText; /* redeclare existing default for visual consistency */
+  &.exword {
+    color: color-mix(in srgb, FieldText 66%, transparent);
+  }
 }
 #vocab option[zh-Latn-pinyin*="?"],
 #vocab option[en=""],
 #wordctl .word-details:not(.noword):not(:valid),
-#wordctl .word-details::placeholder,
-.warn {
+#wordctl .word-details:placeholder-shown {
   color: red;
+  &.exword {
+    color: color-mix(in srgb, red 66%, transparent);
+  }
 }
 #wordctl .noword::placeholder {
   visibility: hidden;
 }
 #vocab option[value=""],
-#word-zh-Hans:not(.noword):not(:valid) {
+#wordctl .word-details#word-zh-Hans:not(.noword):not(:valid) {
   background-color: #f66;
 }
