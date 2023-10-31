@@ -658,4 +658,10 @@ window.addEventListener("DOMContentLoaded", function() {
   loadUI(true);
   loadWordFromUI();
   loadReferencesFromUI();
+
+  window.parent.postMessage({
+    appName: "lcra",
+    event: "appInit",
+    // helper for things that include us in an <iframe>
+  }, "*");
 });
