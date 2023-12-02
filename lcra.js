@@ -198,6 +198,10 @@ window.addEventListener("DOMContentLoaded", function() {
 
   function loadUI(reinit, resize) {
     lang = selectLanguage([...(reinit? [searchParams.get("lang")]: []), lcra_storage.getItem("lcra-lang"), ...navigator.languages]);
+    loadLang("content", (el, v) => { el.innerText = v; });
+    loadLang("title", (el, v) => { el.title = v; });
+    loadLang("placeholder", (el, v) => { el.setAttribute("placeholder", v); });
+
     vocab.replaceChildren([]);
     for (let word of JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]")) {
       addWord(word);
@@ -220,16 +224,13 @@ window.addEventListener("DOMContentLoaded", function() {
         selectOption(found);
       }
     }
-    article.value = lcra_storage.getItem("lcra-article");
+    article.value = lcra_storage.getItem("lcra-article") || (reinit? article.placeholder: "");
     article.disabled = lcra_storageGetBool("lcra-article-edit", true)? "": "disabled";
     arthide.innerText = lcra_articleHide(reinit)? "⇥": "⇤";
     artedit.innerText = lcra_storageGetBool("lcra-article-edit", true)? "✎": "🔒︎";
     artedit.title = lcra_storageGetBool("lcra-article-edit", true)? S("article-unlocked"): S("article-locked");
     setRefUI(preloadRefUI());
     refselect.value = lcra_storage.getItem("lcra-reference") || "purpleculture";
-    loadLang("content", (el, v) => { el.innerText = v; });
-    loadLang("title", (el, v) => { el.title = v; });
-    loadLang("placeholder", (el, v) => { el.setAttribute("placeholder", v); });
     if (reinit || resize) {
       autoResizeVocab();
     }
@@ -342,7 +343,10 @@ window.addEventListener("DOMContentLoaded", function() {
     artfile.value = "";
   });
   help.addEventListener("click", () => {
-    window.alert(article.placeholder);
+    if (!article.value.startsWith(article.placeholder)) {
+      article.value = article.placeholder + "\n----\n\n" + article.value;
+      saveUI();
+    }
   });
   setlang.addEventListener("click", () => {
     let v = window.prompt(S("lang-code") + langs, lang);

@@ -133,7 +133,7 @@ button {
 textarea {
   resize: none;
 }
-::placeholder {
+#control ::placeholder {
   /* browsers don't do this by default!!
   it's needed to make our &.exword usage fully work below. */
   color: inherit;
