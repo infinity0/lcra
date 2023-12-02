@@ -148,6 +148,7 @@ textarea {
 #vocab option[en=""],
 #wordctl .word-details:not(.noword):not(:valid),
 #wordctl .word-details:placeholder-shown {
+  --invalid: "invalid"; /* signal to javascript */
   color: red;
   &.exword {
     color: color-mix(in srgb, red 66%, transparent);

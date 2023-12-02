@@ -128,6 +128,15 @@ window.addEventListener("DOMContentLoaded", function() {
     return wasExample;
   }
 
+  function setWordAppearance(opt) {
+    // some browsers take a bit to apply the style
+    setTimeout(() => {
+      let style = getComputedStyle(opt);
+      let invalid = style.getPropertyValue("--invalid").trim() == '"invalid"';
+      opt.innerText = opt.value + (invalid? " (!)": "");
+    }, 1);
+  }
+
   function addWord(word) {
     let opt = document.createElement("option");
     if (typeof(word) == "object") {
@@ -139,8 +148,8 @@ window.addEventListener("DOMContentLoaded", function() {
       opt.setAttribute("zh-Latn-pinyin", provisionalPinyin(word));
       opt.setAttribute("en", "");
     }
-    opt.appendChild(document.createTextNode(opt.value));
     vocab.appendChild(opt);
+    setWordAppearance(opt);
     selectOption(opt);
     return opt;
   }
@@ -535,9 +544,10 @@ window.addEventListener("DOMContentLoaded", function() {
   function saveWordIntoUI() {
     if (vocab.selectedOptions.length) {
       let opt = vocab.selectedOptions[0];
-      opt.value = opt.innerText = wordzh.value;
+      opt.value = wordzh.value;
       opt.setAttribute("zh-Latn-pinyin", wordpy.value);
       opt.setAttribute("en", worden.value);
+      setWordAppearance(opt);
       unsetIfExample(opt); // any edit on an example automatically saves it
       for (let el of [wordzh, wordpy, worden]) {
         el.classList.remove("exword");
