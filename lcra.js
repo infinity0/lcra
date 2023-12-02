@@ -24,7 +24,7 @@ function lcra_detectMobile() {
 function lcra_articleHide(reinit) {
   let article = document.getElementById("article");
   let initHide = searchParams.get("article-hide");
-  let articleHide = (reinit && initHide !== undefined)? initHide == "true": lcra_storageGetBool("lcra-article-hide", false);
+  let articleHide = (reinit && initHide !== null)? initHide == "true": lcra_storageGetBool("lcra-article-hide", false);
   article.style.display = articleHide? "none": "block";
   return articleHide;
 }
@@ -177,7 +177,7 @@ window.addEventListener("DOMContentLoaded", function() {
   function loadLang(attr, f) {
     loadAttr(attr, [lang, ...langs], f);
   }
-  
+
   const REFUI_ICONS = ["💻︎", "📱︎", "💻︎*", "📱︎*"];
 
   function preloadRefUI() {
@@ -657,11 +657,10 @@ window.addEventListener("DOMContentLoaded", function() {
 
   loadUI(true);
   loadWordFromUI();
-  loadReferencesFromUI();
-
   window.parent.postMessage({
     appName: "lcra",
     event: "appInit",
     // helper for things that include us in an <iframe>
   }, "*");
+  loadReferencesFromUI();
 });

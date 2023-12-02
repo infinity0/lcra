@@ -36,10 +36,11 @@ main {
   position: relative;
 }
 #article {
-  flex: 9 9 56.25%;
+  flex: 4 4 50%;
   padding: 0.5ex;
 }
 #control {
+  flex: 1 1 12.5%;
   min-width: 8em;
   max-width: 12em;
   display: flex;
@@ -47,7 +48,7 @@ main {
   overflow-y: auto;
 }
 #references {
-  flex: 7 7 43.75%;
+  flex: 3 3 37.5%;
 }
 
 /* control layout */
