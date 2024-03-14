@@ -394,10 +394,12 @@ window.addEventListener("DOMContentLoaded", function() {
   });
   help.addEventListener("click", () => {
     let placeholder = artph.getAttribute("content");
-    if (!arttext.innerText.startsWith(placeholder)) {
+    article.style.display = "block";
+    if (!arttext.innerText.startsWith(placeholder.trimEnd())) {
       arttext.innerText = placeholder + "\n----\n\n" + arttext.innerText;
-      saveUI();
     }
+    saveUI();
+    loadUI();
   });
   setlang.addEventListener("click", () => {
     let v = window.prompt(S("lang-code") + langs, lang);
