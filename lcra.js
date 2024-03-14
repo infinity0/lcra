@@ -84,6 +84,9 @@ window.addEventListener("DOMContentLoaded", function() {
   const zhtw = OpenCC.Converter({ from: 'cn', to: 'tw' });
 
   let article = document.getElementById("article");
+  let artph = document.getElementById("article-placeholder");
+  let arttext = document.getElementById("article-text");
+  let artselection = "";
   let arthide = document.getElementById("article-hide");
   let artedit = document.getElementById("article-edit");
   let help = document.getElementById("help");
@@ -207,7 +210,12 @@ window.addEventListener("DOMContentLoaded", function() {
 
   function loadUI(reinit, resize) {
     lang = selectLanguage([...(reinit? [searchParams.get("lang")]: []), lcra_storage.getItem("lcra-lang"), ...navigator.languages]);
-    loadLang("content", (el, v) => { el.innerText = v; });
+    loadLang("content", (el, v) => {
+      el.innerText = v;
+      // dumb spec behaviour https://stackoverflow.com/questions/67286355
+      // so also set the content attribute, so we can get the clean version later
+      el.setAttribute("content", v);
+    });
     loadLang("title", (el, v) => { el.title = v; });
     loadLang("placeholder", (el, v) => { el.setAttribute("placeholder", v); });
 
@@ -233,8 +241,9 @@ window.addEventListener("DOMContentLoaded", function() {
         selectOption(found);
       }
     }
-    article.value = lcra_storage.getItem("lcra-article") || (reinit? article.placeholder: "");
-    article.disabled = lcra_storageGetBool("lcra-article-edit", true)? "": "disabled";
+    arttext.innerText = lcra_storage.getItem("lcra-article") || (reinit? artph.getAttribute("content"): "");
+    loadPlaceholderFromUI();
+    arttext.setAttribute("contenteditable", lcra_storageGetBool("lcra-article-edit", true) + "");
     arthide.innerText = lcra_articleHide(reinit)? "⇥": "⇤";
     artedit.innerText = lcra_storageGetBool("lcra-article-edit", true)? "✎": "🔒︎";
     artedit.title = lcra_storageGetBool("lcra-article-edit", true)? S("article-unlocked"): S("article-locked");
@@ -261,9 +270,12 @@ window.addEventListener("DOMContentLoaded", function() {
         lcra_storage.setItem("lcra-vocab-selected", opt.value);
       }
     }
-    lcra_storage.setItem("lcra-article", article.value);
+    if (arttext.offsetParent !== null) {
+      // dumb spec behaviour https://stackoverflow.com/questions/67286355
+      lcra_storage.setItem("lcra-article", arttext.innerText.trimEnd());
+    }
     lcra_storage.setItem("lcra-article-hide", (article.style.display == "none")? "1": "0");
-    lcra_storage.setItem("lcra-article-edit", (article.disabled)? "0": "1");
+    lcra_storage.setItem("lcra-article-edit", (arttext.getAttribute("contenteditable") + "" === "true")? "1": "0");
     lcra_storage.setItem("lcra-reference-ui", presaveRefUI());
     lcra_storage.setItem("lcra-reference", refselect.value);
   }
@@ -320,14 +332,42 @@ window.addEventListener("DOMContentLoaded", function() {
     showFrameUrl(refurl, url, label);
   }
 
-  article.addEventListener("input", saveUI, false);
+  function checkAncestor(node, anc) {
+    let cur = node;
+    while (cur !== null && cur !== document) {
+      if (cur == anc) {
+        return true;
+      }
+      cur = cur.parentNode;
+    }
+    return false;
+  }
+
+  function saveSelection() {
+    let s = window.getSelection();
+    if (checkAncestor(s.anchorNode, arttext) && checkAncestor(s.focusNode, arttext)) {
+      artselection = s.toString();
+    } else {
+      artselection = "";
+    }
+  }
+
+  function loadPlaceholderFromUI() {
+    artph.style.display = (arttext.innerText && arttext.innerText != "\n")? "none": "block";
+  }
+
+  arttext.addEventListener("input", () => {
+    saveUI();
+    loadPlaceholderFromUI();
+  }, false);
+  document.addEventListener("selectionchange", saveSelection);
   arthide.addEventListener("click", () => {
     article.style.display = (article.style.display == "none")? "block": "none";
     saveUI();
     loadUI();
   });
   artedit.addEventListener("click", () => {
-    article.disabled = (article.disabled)? "": "disabled";
+    arttext.setAttribute("contenteditable", (arttext.getAttribute("contenteditable") + "" === "true")? "false": "true");
     saveUI();
     loadUI();
   });
@@ -342,8 +382,9 @@ window.addEventListener("DOMContentLoaded", function() {
     }
     const reader = new FileReader();
     reader.onload = (e) => {
-      article.value = e.target.result;
+      arttext.innerText = e.target.result;
       saveUI();
+      loadPlaceholderFromUI();
     };
     for (let file of artfile.files) {
       reader.readAsText(file)
@@ -352,8 +393,9 @@ window.addEventListener("DOMContentLoaded", function() {
     artfile.value = "";
   });
   help.addEventListener("click", () => {
-    if (!article.value.startsWith(article.placeholder)) {
-      article.value = article.placeholder + "\n----\n\n" + article.value;
+    let placeholder = artph.getAttribute("content");
+    if (!arttext.innerText.startsWith(placeholder)) {
+      arttext.innerText = placeholder + "\n----\n\n" + arttext.innerText;
       saveUI();
     }
   });
@@ -420,7 +462,7 @@ window.addEventListener("DOMContentLoaded", function() {
   });
   let addword = document.getElementById("addword");
   addword.addEventListener("click", () => {
-    let input = article.value.substring(article.selectionStart, article.selectionEnd);
+    let input = artselection;
     input = input || window.prompt(S("input-or-select"), "");
     input && addInput(input);
   });
@@ -437,6 +479,49 @@ window.addEventListener("DOMContentLoaded", function() {
   copyword.addEventListener("click", () => {
     for (let o of vocab.selectedOptions) {
       navigator.clipboard.writeText(o.value);
+    }
+  });
+  let findword = document.getElementById("findword");
+  findword.addEventListener("click", (e) => {
+    // clear old results
+    let oldFound = arttext.querySelectorAll(".found");
+    let sameword = false;
+    if (oldFound.length) {
+      sameword = oldFound[0].innerText == vocab.value;
+      if (!sameword || e.shiftKey) {
+        for (let el of oldFound) {
+          el.replaceWith(el.firstChild);
+        }
+      }
+    }
+    if (!vocab.value) {
+      return;
+    }
+    // add spans for new results
+    if (!sameword) {
+      arttext.innerHTML = arttext.innerHTML.replaceAll(vocab.value, `<span class="found">${vocab.value}</span>`);
+    }
+    // scroll to next result
+    if (!e.shiftKey) { // FIXME: long press
+      let found = arttext.querySelectorAll(".found");
+      if (found.length) {
+        found = Array.from(found);
+        let oldfocus = found.findIndex(el => el.classList.contains("found-focus"));
+        if (oldfocus == found.length - 1) {
+          // we reached the end, clear all highlights
+          // next click will start from beginning
+          for (let el of found) {
+            el.replaceWith(el.firstChild);
+          }
+        } else {
+          if (oldfocus >= 0) {
+            found[oldfocus].classList.remove("found-focus");
+          }
+          focus = found[oldfocus + 1];
+          focus.classList.add("found-focus");
+          focus.scrollIntoView();
+        }
+      }
     }
   });
   let delword = document.getElementById("delword");

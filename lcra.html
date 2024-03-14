@@ -12,10 +12,10 @@
   <script src="lcra.js"></script>
 </head>
 <body>
-<div id="window-find-reset-hack">window.find reset hack</div>
 <main>
-<textarea id="article" placeholder=""
-placeholder-zh-Hans="基础说明：
+<div id="article">
+  <div class="article" id="article-placeholder" content=""
+content-zh-Hans="基础说明：
 
 1、把文章内容直接复制到这里，或用右上的文章导入功能（⇧）上传本地纯文本文件。如果你覆盖此帮助文本然后还要读，点击在右上高级栏（☰）内的帮助键（?）。
 2、在文章中选择任意单词或词组，然后点击词汇下面的添加键（⊕）把选中的单词加入到词汇表中。
@@ -25,8 +25,7 @@ placeholder-zh-Hans="基础说明：
 6、我们提供的CSV导出格式（⇩,）可方便地导入至Anki记忆软件中。
 7、不用担心退出这个页面：下次回来依然可以找到你之前输入的数据。
 "
-
-placeholder-en="Basic instructions:
+content-en="Basic instructions:
 
 1. Copy some article text directly into here, or use the import function (⇧) on the top-right to load a local plain text file. If you overwrite this help text and need to read it again, click on the (?) button within the advanced menu (☰) on the top-right.
 2. Select some word(s) in the article, then use the add function (⊕) at the bottom of the vocab panel to add them to the vocab list.
@@ -35,8 +34,9 @@ placeholder-en="Basic instructions:
 5. When satisfied, use the export function (⇩) to save the vocab list to a local file.
 6. Our CSV export format (⇩,) can be conveniently imported into the Anki memorisation app.
 7. Don't worry about leaving this web page: when you come back the data you input will still be here.
-">
-</textarea>
+"></div>
+  <div class="article" id="article-text" contenteditable="true"></div>
+</div>
 <script>lcra_articleHide(true); // helps to prevent UI flickers</script>
 <div id="control">
   <fieldset>
@@ -71,6 +71,7 @@ from there and drop them into the add button (⊕) here.">⇤</button>
 Prompt for words to add, or
 Drag and drop words here to add">⊕</button>
       <button id="copyword" title="" title-en="Copy word selected above to clipboard">⎘</button>
+      <button id="findword" title="" title-en="Find word selected above in article. Hold shift to toggle highlight.">🔍︎</button>
       <button id="delword" title="" title-en="Delete word selected above">⊖</button>
     </div>
     <div style="float: right;">

@@ -3,12 +3,6 @@ html, body {
   height: 100%;
 }
 
-#window-find-reset-hack {
-  position: absolute;
-  top: -1000px;
-  left: -1000px;
-}
-
 /* Work around https://github.com/ankidroid/Anki-Android/issues/14547 */
 @media (prefers-color-scheme: light) {
   body {
@@ -37,7 +31,6 @@ main {
 }
 #article {
   flex: 4 4 50%;
-  padding: 0.5ex;
 }
 #control {
   flex: 1 1 12.5%;
@@ -49,6 +42,23 @@ main {
 }
 #references {
   flex: 3 3 37.5%;
+}
+.article, .reference {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* article layout */
+.article {
+  overflow-y: auto;
+  overflow-wrap: break-word;
+  padding: 0.5ex;
+}
+#article-text[contenteditable=false], #article-placeholder {
+  opacity: 60%;
 }
 
 /* control layout */
@@ -95,13 +105,6 @@ fieldset > *:last-child {
 }
 
 /* references layout */
-.reference {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-}
 .frameurl {
   display: inline-block;
   position: absolute;
@@ -160,4 +163,12 @@ textarea {
 #vocab option[value=""],
 #wordctl .word-details#word-zh-Hans:not(.noword):not(:valid) {
   background-color: #f66;
+}
+.found {
+  background-color: #f66;
+  margin: -2px;
+  padding: 2px;
+}
+.found-focus {
+  background-color: #ff0;
 }
