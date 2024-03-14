@@ -538,6 +538,19 @@ window.addEventListener("DOMContentLoaded", function() {
     loadWordFromUI();
     loadReferencesFromUI();
   });
+  let delallword = document.getElementById("delallword");
+  delallword.addEventListener("click", () => {
+    if (window.confirm(delallword.title + " - " + S("confirm"))) {
+      for (let i = vocab.options.length - 1; i >= 0; i--) {
+        let opt = vocab.options[i];
+        unsetIfExample(opt);
+        opt.remove();
+      }
+      saveUI();
+      loadWordFromUI();
+      loadReferencesFromUI();
+    }
+  });
 
   function download(url, label, cleanup) {
     // https://www.stefanjudis.com/snippets/how-trigger-file-downloads-with-javascript/
