@@ -312,9 +312,7 @@ window.addEventListener("DOMContentLoaded", function() {
 
     for (let el of references) {
       if ("proxies" in el) {
-        let proxy = eval(el.getAttribute("use-proxy-if"));
-        //console.log("proxy", el.id, proxy);
-        el.proxies = proxy? lcraProxies(): [];
+        el.proxies = lcraProxies();
       }
       let urlpat = el.getAttribute("urlpat");
       // setting display: none prevents some browsers from scrolling to #-URLs

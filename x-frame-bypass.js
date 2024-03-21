@@ -1,8 +1,6 @@
 // adapted from https://niutech.github.io/x-frame-bypass/x-frame-bypass.js
 customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
-  static get observedAttributes() {
-    return ['src']
-  }
+  static observedAttributes = ['src'];
   constructor () {
     super()
   }
@@ -15,17 +13,20 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
   }
   async attributeChangedCallback (e) {
     if (this.proxies.length && this.src) {
-      this.load(this.src, {
-        headers: {
-          "X-Cors-Headers": this.getAttribute("cors-headers") || "{}",
-        }
-      })
+      let useproxy = eval(this.getAttribute("use-proxy-if"));
+      if (useproxy) {
+        this.loadProxy(this.src, {
+          headers: {
+            "X-Cors-Headers": this.getAttribute("cors-headers") || "{}",
+          }
+        })
+      } // otherwise normal iframe loading behaviour
     }
   }
   connectedCallback () {
     this.sandbox = '' + this.sandbox || 'allow-forms allow-modals allow-scripts allow-same-origin'
   }
-  async load (url, options) {
+  async loadProxy (url, options) {
     if (!url || !url.startsWith('http'))
       throw new Error(`X-Frame-Bypass src ${url} does not start with http(s)://`)
     let origin = new URL(url).origin;
@@ -40,7 +41,7 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
     width: 50px;
     height: 50px;
     background-color: #333;
-    border-radius: 50%;  
+    border-radius: 50%;
     animation: loader 1s infinite ease-in-out;
   }
   @keyframes loader {
@@ -59,10 +60,10 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
 </body>
 </html>`
     try {
-      let [proxy, resp] = await this.fetchProxy(url, options, 0);
+      let [proxy, resp] = await this.fetchProxy(url, options);
       let data = await resp.text();
       if (data)
-        this.srcdoc = srcx(data.replace(/<head([^>]*)>/i, `<head$1>
+        this.srcdoc = srcx(data).replace(/<head([^>]*)>/i, `<head$1>
   <base href="${url}">
   <script>
   // Proxy XMLHttpRequest as well
@@ -74,25 +75,27 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
       } else if (url.startsWith("/")) {
         url = "${proxy}" + "${origin}" + url;
       }
-      //console.log("intercepted XMLHttpRequest.open", arguments);
+      console.debug("X-Frame-Bypass intercepted XMLHttpRequest.open", arguments);
       return open.apply(this, arguments);
     };
   })(XMLHttpRequest.prototype);
 
   // X-Frame-Bypass navigation event handlers
   document.addEventListener('click', e => {
-    if (frameElement && document.activeElement && document.activeElement.href) {
+    if (window.frameElement && document.activeElement && document.activeElement.href) {
       e.preventDefault()
-      frameElement.load(document.activeElement.href)
+      console.debug("X-Frame-Bypass intercepted click", e);
+      window.frameElement.loadProxy(document.activeElement.href)
     }
   })
   document.addEventListener('submit', e => {
-    if (frameElement && document.activeElement && document.activeElement.form && document.activeElement.form.action) {
+    if (window.frameElement && document.activeElement && document.activeElement.form && document.activeElement.form.action) {
       e.preventDefault()
+      console.debug("X-Frame-Bypass intercepted submit", e);
       if (document.activeElement.form.method === 'post')
-        frameElement.load(document.activeElement.form.action, {method: 'post', body: new FormData(document.activeElement.form)})
+        window.frameElement.loadProxy(document.activeElement.form.action, {method: 'post', body: new FormData(document.activeElement.form)})
       else
-        frameElement.load(document.activeElement.form.action + '?' + new URLSearchParams(new FormData(document.activeElement.form)))
+        window.frameElement.loadProxy(document.activeElement.form.action + '?' + new URLSearchParams(new FormData(document.activeElement.form)))
     }
   })
 
@@ -102,11 +105,28 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
     let i = url.indexOf("#");
     if (i >= 0) {
       let hash = url.substring(i + 1);
-      let el = document.getElementById(hash);
-      if (el) el.scrollIntoView();
+      let scroll = function () {
+        let cands = [
+          document.getElementById(hash),
+          document.querySelector(hash),
+        ];
+        while (cands.length) {
+          let el = cands.pop();
+          if (!el) continue;
+          console.debug("X-Frame-Bypass scrolling to", hash, el);
+          el.scrollIntoView();
+          if (el.offsetParent === null) {
+            console.debug("element is being hidden, scroll ineffective, retrying soon...");
+            window.setTimeout(scroll, 500);
+          }
+          return;
+        }
+        console.debug("X-Frame-Bypass could not find element:", hash);
+      };
+      scroll();
     }
   })
-  </script>`));
+  </script>`);
     } catch (e) {
       console.error('Cannot load X-Frame-Bypass:', e)
     }
