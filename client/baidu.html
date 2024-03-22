@@ -15,17 +15,22 @@
     if (localStorage.getItem("lcraResultsCache-baidu") !== null) { // helps with debugging
       lcraResultsCache = JSON.parse(localStorage.getItem("lcraResultsCache-baidu"))
     }
-    let noDictResults = "(no dictionary result; see disclaimer below)";
+    let noDictResults = "no dictionary result; see disclaimer below";
+    let failedDictResults = "could not parse dictionary result; try the Baidu Hanyu reference (Chinese-Chinese) instead. you can also file me a bug.";
     basicTranslate("original", "translation", (input, proxy) => {
       let dict = document.getElementById("dictionary");
       dict.innerText = `正在查：${input}`;
       return baiduTranslate(input, proxy);
     }, res => {
       let dict = document.getElementById("dictionary");
-      //console.log(res);
       if (res.dict_result) {
         let defs = baiduPrettyPrintDictionary(res.dict_result);
-        dict.innerHTML = defs? `<dl>${defs}</dl>`: noDictResults;
+        if (defs) {
+          dict.innerHTML = `<dl>${defs}</dl>`;
+        } else {
+          dict.innerHTML = failedDictResults;
+          console.log("failed to parse baidu result", res);
+        }
       } else {
         dict.innerHTML = noDictResults;
       }

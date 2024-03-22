@@ -30,7 +30,6 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
     if (!url || !url.startsWith('http'))
       throw new Error(`X-Frame-Bypass src ${url} does not start with http(s)://`)
     let origin = new URL(url).origin;
-    let srcx = eval(`(${this.getAttribute("src-transform") || "x => x"})`);
     this.srcdoc = `<html>
 <head>
   <style>
@@ -61,6 +60,7 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
 </html>`
     try {
       let [proxy, resp] = await this.fetchProxy(url, options);
+      let srcx = eval(`(${this.getAttribute("src-transform") || "x => x"})`);
       let data = await resp.text();
       if (data)
         this.srcdoc = srcx(data).replace(/<head([^>]*)>/i, `<head$1>
@@ -100,35 +100,74 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
   })
 
   // Scroll #-URLs properly into view.
-  document.addEventListener('DOMContentLoaded', e => {
-    let url = "${url}";
-    let i = url.indexOf("#");
-    if (i >= 0) {
-      let hash = url.substring(i + 1);
-      let scroll = function () {
-        let cands = [
-          document.getElementById(hash),
-          document.querySelector(hash),
-        ];
-        while (cands.length) {
-          let el = cands.pop();
-          if (!el) continue;
-          console.debug("X-Frame-Bypass scrolling to", hash, el);
-          el.scrollIntoView();
-          if (el.offsetParent === null) {
-            console.debug("element is being hidden, scroll ineffective, retrying soon...");
-            window.setTimeout(scroll, 500);
-          }
-          return;
+  let url = "${url}";
+  let i = url.indexOf("#");
+  if (i >= 0) {
+    let hash = decodeURIComponent(url.substring(i + 1));
+    let scrollHash = function (e) {
+      let cands = [
+        document.getElementById(hash),
+        document.querySelector(hash),
+      ];
+      while (cands.length) {
+        let el = cands.pop();
+        if (!el) continue;
+        if (el.offsetParent === null) {
+          console.debug("element is being hidden, retrying scroll soon...");
+          window.setTimeout(scroll, 500);
+        } else {
+          window.scrollTo(0, el.offsetTop - 1); // -1 to avoid any sticky bars
+          console.debug("X-Frame-Bypass scrolled to", hash, e);
         }
-        console.debug("X-Frame-Bypass could not find element:", hash);
-      };
-      scroll();
-    }
-  })
+        return;
+      }
+      console.debug("X-Frame-Bypass could not find element:", hash);
+    };
+    document.addEventListener('DOMContentLoaded', scrollHash);
+    window.addEventListener('load', scrollHash);
+  }
   </script>`);
     } catch (e) {
       console.error('Cannot load X-Frame-Bypass:', e)
+      this.srcdoc = `<html>
+<head>
+  <style>
+  @media (prefers-color-scheme: light) {
+    body {
+      background-color: white;
+      color: black;
+    }
+  }
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-color: black;
+      color: white;
+    }
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    positive: relative;
+    margin: 0;
+    padding: 0;
+  }
+  .error {
+    position: absolute;
+    top: 50%;
+    margin: 0 0.5em;
+    transform: translateY(calc(-50% - 80px));
+    h1 { font-size: 40px; }
+  }
+  </style>
+</head>
+<body>
+  <div class="error">
+  <h1>X-Frame-Bypass loading failed</h1>
+  <p>Depending on the error message below, we may have been temporarily blocked by the reference provider. You can try switching UI (between desktop vs mobile), try another reference, or try again later.</p>
+  <pre>${e}</pre>
+  </div>
+</body>
+</html>`
     }
   }
   async fetchProxy (url, options) {

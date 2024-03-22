@@ -101,6 +101,7 @@ Drag and drop words here to add">⊕</button>
       <option value="purpleculture" selected>Purple Culture</option>
       <option value="hanzicraft">HanziCraft</option>
       <option value="wiktionary">Wiktionary</option>
+      <option value="baidu-hanyu" content="" content-en="Baidu Hanyu" content-zh-Hans="百度汉语"></option>
       <option value="baidu-fanyi" content="" content-en="Baidu Fanyi" content-zh-Hans="百度翻译"></option>
       <option value="baidu-baike" content="" content-en="Baidu Baike" content-zh-Hans="百度百科"></option>
       <option value="baidu-search" content="" content-en="Baidu Search" content-zh-Hans="百度搜索"></option>
@@ -156,21 +157,27 @@ Drag and drop words here to add">⊕</button>
     cors-headers=""
     cors-headers-desktop='{"cookie":"stopMobileRedirect=true"}'
   ></iframe>
+  <iframe class="reference" id="baidu-hanyu"
+    urlpat=""
+    urlpat-desktop="https://hanyu.baidu.com/s?wd=XX#term-body"
+    urlpat-mobile="https://hanyu.baidu.com/hanyu-page/term/detail?wd=XX#detail_shiyi"
+  ></iframe>
   <iframe class="reference" id="baidu-fanyi"
     urlpat="./client/baidu.html#XX"
     refurlpat="https://fanyi.baidu.com/#zh/en/XX"
   ></iframe>
   <iframe class="reference" id="baidu-baike"
     urlpat=""
-    urlpat-desktop="https://baike.baidu.com/item/XX#J-lemma-main-wrapper"
+    urlpat-desktop='https://baike.baidu.com/item/XX#[class^="index-module_navBarWrapper"]'
     urlpat-mobile="https://baike.baidu.com/item/XX#.card-part"
     sandbox is="x-frame-bypass"
     use-proxy-if=""
-    use-proxy-if-desktop="lcra_detectMobile()"
+    use-proxy-if-desktop="true"
     use-proxy-if-mobile="!lcra_detectMobile()"
+    use-proxy-comment="without proxy, baidu desktop scripts breaks 多义词 and deletes it from the page after load. mobile is fine. tested 2024-03."
     cors-headers=""
-    cors-headers-desktop='{"user-agent": "Firefox"}'
-    cors-headers-mobile='{"user-agent": "Android"}'
+    cors-headers-desktop='{"user-agent": "Mozilla/5.0"}'
+    cors-headers-mobile='{"user-agent": "Android/11.0"}'
   ></iframe>
   <iframe class="reference" id="baidu-search"
     urlpat='https://baidu.com/s?wd="XX"的意思#content_style'
@@ -184,8 +191,8 @@ Drag and drop words here to add">⊕</button>
     - if we want mobile UI on desktop, we must proxy to set the user agent.
     "
     cors-headers=""
-    cors-headers-desktop='{"user-agent": "Firefox"}'
-    cors-headers-mobile='{"user-agent": "Android"}'
+    cors-headers-desktop='{"user-agent": "Mozilla/5.0"}'
+    cors-headers-mobile='{"user-agent": "Android/11.0"}'
   ></iframe>
   <iframe class="reference" id="google"
     urlpat="./client/google2.html?XX"
@@ -195,7 +202,11 @@ Drag and drop words here to add">⊕</button>
     urlpat="./client/bing.html#XX"
     refurlpat="https://www.bing.com/translator?from=zh-Hans&to=en&text=XX"
   ></iframe>
-  <span id="refurl" class="frameurl"><a href="" target="_blank"><span></span></a></span>
+  <span id="refurl" class="frameurl"><a href="" target="_blank"
+    title=""
+    title-en="If some website functionality is broken, use this link to open the reference in a new window."
+    title-zh-Hans="如果某些网站功能坏了，使用此链接把参考资料在新窗口中打开。"
+  ><span></span></a></span>
 </div>
 </main>
 </body>

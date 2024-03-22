@@ -176,6 +176,31 @@ async function baiduTranslate(query, corsProxy, extraHeaders) {
   }
 }
 
+function baiduZdictMeans(zdict_means, defs) {
+  zdict_means.map(mean => mean.exp.map(ent => {
+    // Baidu seems to have cut corners on parsing the original source here.
+    // Example sentences are interspersed with meanings, which have hard-coded text bullet points
+    // We abuse browsers' forgiving parsing of HTML open tags to produce a nice result.
+    let r = /^\(\d+\)\s*(.*)$/g;
+    let sawEmptyBullet = false;
+    let means = ent.des.map(e => {
+      let s = e.main.replace(/;\s*/g, "; ").replace(/\[([^\]].*)\][∶:]?\s*/, (_, s1) => `[${s1}]: `);
+      let wasEmpty = sawEmptyBullet;
+      sawEmptyBullet = false;
+      return s.match(r)? s.replace(r, (_, str) => {
+        if (str.length) {
+          return `</ul><li>${str}<ul>`;
+        } else {
+          sawEmptyBullet = true;
+          return `</ul><li>`;
+        }
+      }): (wasEmpty? `${s}<ul>`: `<li>${s}`);
+    }).join("").replace(/^<\/ul>/, "");
+    let k = mean.pinyin;
+    (defs[k] ||= {})["释义"] = `<ol>${means}</ol>`;
+  }));
+}
+
 function baiduPrettyPrintDictionary(dres) {
   let defs = {}; // { py: { part: dd } };
   if (dres.synthesize_means && dres.synthesize_means.symbols) {
@@ -186,33 +211,14 @@ function baiduPrettyPrintDictionary(dres) {
       (defs[k] ||= {})[part.part_name] = `<ol>${subparts}</ol>`;
     }));
   }
-  if (dres.zdict && dres.zdict.simple && dres.zdict.simple.means) {
+  if (dres.zdict && dres.zdict.detail && dres.zdict.detail.means) {
+    baiduZdictMeans(dres.zdict.detail.means, defs);
+  } else if (dres.zdict && dres.zdict.simple && dres.zdict.simple.means) {
     // defs for multi-char words
     // updated 2023-10-16. we prefer the zdict, as it's:
     // - generally more complete than dres.synthesize_means.cys
     // - generally better structured than dres.simple_means.symbols
-    dres.zdict.simple.means.map(mean => mean.exp.map(ent => {
-      // Baidu seems to have cut corners on parsing the original source here.
-      // Example sentences are interspersed with meanings, which have hard-coded text bullet points
-      // We abuse browsers' forgiving parsing of HTML open tags to produce a nice result.
-      let r = /^\(\d+\)\s*(.*)$/g;
-      let sawEmptyBullet = false;
-      let means = ent.des.map(e => {
-        let s = e.main.replace(/;\s*/g, "; ").replace(/\[([^\]].*)\][∶:]?\s*/, (_, s1) => `[${s1}]: `);
-        let wasEmpty = sawEmptyBullet;
-        sawEmptyBullet = false;
-        return s.match(r)? s.replace(r, (_, str) => {
-          if (str.length) {
-            return `</ul><li>${str}<ul>`;
-          } else {
-            sawEmptyBullet = true;
-            return `</ul><li>`;
-          }
-        }): (wasEmpty? `${s}<ul>`: `<li>${s}`);
-      }).join("").replace(/^<\/ul>/, "");
-      let k = mean.pinyin;
-      (defs[k] ||= {})["释义"] = `<ol>${means}</ol>`;
-    }));
+    baiduZdictMeans(dres.zdict.simple.means, defs);
   }
   return Object.entries(defs).map(([k, ent]) =>
     Object.entries(ent).map(([p, v]) =>

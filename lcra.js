@@ -306,7 +306,7 @@ window.addEventListener("DOMContentLoaded", function() {
     let word = vocab.value;
 
     let refui_ty = (REFUI_ICONS.indexOf(refui.innerText) & 1)? "mobile": "desktop";
-    for (let a of ["cors-headers", "urlpat", "refurlpat", "use-proxy-if"]) {
+    for (let a of ["cors-headers", "urlpat", "refurlpat", "use-proxy-if", "src-transform"]) {
       loadAttr(a, [refui_ty], (el, v) => { el.setAttribute(a, v); });
     }
 
