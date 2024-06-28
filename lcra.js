@@ -72,6 +72,9 @@ window.addEventListener("DOMContentLoaded", function() {
     "sample-anki-deck-url": {
       "en": "To download it later, the URL to the deck is inside the CSV file.",
     },
+    "ref-cancel": {
+      "en": "Baidu Baike reference has been blanked. Your menus should now be unbugged. For details see https://github.com/infinity0/lcra/issues/6",
+    },
   };
   function S(k) {
     for (let l of [lang, ...langs]) {
@@ -97,6 +100,7 @@ window.addEventListener("DOMContentLoaded", function() {
   let references = document.getElementsByClassName("reference");
   let refselect = document.getElementById("refselect");
   let refurl = document.getElementById("refurl").querySelector("a");
+  let refcancel = document.getElementById("refcancel").querySelector("a");
   let refui = document.getElementById("refui");
 
   function selectLanguage(candidates) {
@@ -675,6 +679,15 @@ window.addEventListener("DOMContentLoaded", function() {
     saveUI();
     loadReferencesFromUI();
   });
+  refcancel.addEventListener("click", () => {
+    let bel = document.getElementById("baidu-baike");
+    if (bel.clearSrc) {
+      bel.clearSrc();
+    } else {
+      bel.src = "about:blank";
+    }
+    window.alert(S("ref-cancel"));
+  })
   refui.addEventListener("click", () => {
     let old_idx = REFUI_ICONS.indexOf(refui.innerText);
     let mob = Number(lcra_detectMobile());
