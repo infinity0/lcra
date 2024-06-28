@@ -66,6 +66,9 @@ window.addEventListener("DOMContentLoaded", function() {
     "refui-text": {
       "en": ["Desktop UI", "Mobile UI", "Auto UI (Desktop)", "Auto UI (Mobile)"],
     },
+    "incomplete-words": {
+      "en": "Incomplete words listed above. Continue with export?",
+    },
     "sample-anki-deck": {
       "en": "Also download a sample Anki deck for importing the CSV into?",
     },
@@ -588,15 +591,39 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }
 
+  function getVocab() {
+    let contents = JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]");
+    let incomplete = [];
+    for (let word of contents) {
+      if (!word["zh-Latn-pinyin"]){
+        incomplete.push(word["zh-Hans"] + ": pinyin");
+      }
+      if (!word["en"]) {
+        incomplete.push(word["zh-Hans"] + ": English");
+      }
+    }
+    if (incomplete.length) {
+      if (window.confirm(incomplete.join("\n") + "\n" + S("incomplete-words"))) {
+        return contents;
+      } else {
+        return null;
+      }
+    } else {
+      return contents;
+    }
+  }
+
   let exportJson = document.getElementById("vocab-export-json");
   exportJson.addEventListener("click", () => {
-    let contents = JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]");
+    let contents = getVocab();
+    if (!contents) return;
     exportVocab([JSON.stringify(contents, null, 1)], "application/json");
   });
   let exportCsv = document.getElementById("vocab-export-csv");
   exportCsv.addEventListener("click", () => {
     let keys = "zh-Hans,zh-Latn-pinyin,en".split(",");
-    let contents = JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]");
+    let contents = getVocab();
+    if (!contents) return;
     let lines = contents.map(opt => keys.map(k => csvEscape(opt[k])).join(",") + "\n");
     // https://docs.ankiweb.net/importing/text-files.html#file-headers
     // https://www.w3.org/International/questions/qa-choosing-language-tags
