@@ -581,7 +581,7 @@ window.addEventListener("DOMContentLoaded", function() {
   }
 
   function csvEscape(text) {
-    if (text.indexOf(",") < 0) {
+    if (text.indexOf(",") < 0 && text.indexOf("\n") < 0) {
       return text;
     } else {
       return '"' + text.replace('"', '""') + '"';
