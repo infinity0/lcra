@@ -713,7 +713,12 @@ window.addEventListener("DOMContentLoaded", function() {
     } else {
       bel.src = "about:blank";
     }
-    window.alert(S("ref-cancel"));
+    // if we alert immediately then the workaround fails.
+    // if the timeout is too small then it also fails.
+    // buggy piece of shit Android Chromium.
+    window.setTimeout(() => {
+      window.alert(S("ref-cancel"));
+    }, 125);
   })
   refui.addEventListener("click", () => {
     let old_idx = REFUI_ICONS.indexOf(refui.innerText);
