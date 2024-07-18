@@ -55,9 +55,13 @@ window.addEventListener("DOMContentLoaded", function() {
       "en": "First add (⊕) a word",
       "zh-Hans": "先添加（⊕）个单词",
     },
-    "input-or-select": {
-      "en": "Please input the word(s) to add, or select some in the article then try again.",
-      "zh-Hans": "请输入要添加的单词，或者在文章里选择一些然后再重试。",
+    "input": {
+      "en": "Please input the words to add, separated by spaces.",
+      "zh-Hans": "请输入要添加的单词，以空格分隔。",
+    },
+    "or-select": {
+      "en": "Or, select some in the article then try again.",
+      "zh-Hans": "或者，在文章里选择一些然后再重试。",
     },
     "confirm-long-word": {
       "en": "may not be a word. Really add?",
@@ -470,7 +474,7 @@ window.addEventListener("DOMContentLoaded", function() {
   let addword = document.getElementById("addword");
   addword.addEventListener("click", () => {
     let input = artselection;
-    input = input || window.prompt(S("input-or-select"), "");
+    input = input || window.prompt(S("input") + " " + S("or-select"), "");
     input && addInput(input);
   });
   addword.addEventListener("dragover", (e) => {
@@ -482,10 +486,11 @@ window.addEventListener("DOMContentLoaded", function() {
     addInput(e.dataTransfer.getData("text"));
     e.preventDefault();
   });
-  let copyword = document.getElementById("copyword");
-  copyword.addEventListener("click", () => {
+  let deriveword = document.getElementById("deriveword");
+  deriveword.addEventListener("click", () => {
     for (let o of vocab.selectedOptions) {
-      navigator.clipboard.writeText(o.value);
+      let input = window.prompt(S("input"), o.value);
+      input && addInput(input);
     }
   });
   let findword = document.getElementById("findword");
