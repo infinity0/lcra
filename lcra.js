@@ -592,7 +592,7 @@ window.addEventListener("DOMContentLoaded", function() {
     if (text.indexOf(",") < 0 && text.indexOf("\n") < 0) {
       return text;
     } else {
-      return '"' + text.replace('"', '""') + '"';
+      return '"' + text.replace(/"/g, '""') + '"';
     }
   }
 
