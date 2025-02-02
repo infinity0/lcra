@@ -138,7 +138,7 @@ button {
   vertical-align: middle;
 }
 .secondary {
-  font-size: smaller;
+  font-size: 75%;
 }
 textarea {
   resize: none;

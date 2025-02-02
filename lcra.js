@@ -33,14 +33,19 @@ window.addEventListener("DOMContentLoaded", function() {
 
   let langs = ["en", "zh-Hans"];
   let lang;
+  let bandwidths = ["full", "low", "very-low"];
+  let bandwidth;
   let strings = {
     "confirm": {
       "en": "Are you sure?",
       "zh-Hans": "确定吗？",
     },
-    "lang-code": {
+    "setlang": {
       "en": "Enter language code, one of: ",
       "zh-Hans": "输入语言代码，其中之一：",
+    },
+    "setbw": {
+      "en": "Set the desired bandwidth usage, one of: ",
     },
     "article-unlocked": {
       "en": "Article is unlocked for editing. Click to lock.",
@@ -68,7 +73,7 @@ window.addEventListener("DOMContentLoaded", function() {
       "zh-Hans": "可能不是单词。真的添加？",
     },
     "refui-text": {
-      "en": ["Desktop UI", "Mobile UI", "Auto UI (Desktop)", "Auto UI (Mobile)"],
+      "en": ["Desktop UI", "Mobile UI", "Auto UI: D", "Auto UI: M"],
     },
     "incomplete-words": {
       "en": "Incomplete words listed above. Continue with export?",
@@ -101,6 +106,7 @@ window.addEventListener("DOMContentLoaded", function() {
   let artedit = document.getElementById("article-edit");
   let help = document.getElementById("help");
   let setlang = document.getElementById("setlang");
+  let setbw = document.getElementById("setbw");
   let wipe = document.getElementById("wipe");
   let vocab = document.getElementById("vocab");
   let histctl = document.getElementById("histctl");
@@ -230,6 +236,9 @@ window.addEventListener("DOMContentLoaded", function() {
     loadLang("title", (el, v) => { el.title = v; });
     loadLang("placeholder", (el, v) => { el.setAttribute("placeholder", v); });
 
+    bandwidth = lcra_storage.getItem("lcra-bandwidth");
+    if (!bandwidths.includes(bandwidth)) bandwidth = "full";
+
     vocab.replaceChildren([]);
     for (let word of JSON.parse(lcra_storage.getItem("lcra-vocab") || "[]")) {
       addWord(word);
@@ -275,6 +284,7 @@ window.addEventListener("DOMContentLoaded", function() {
 
   function saveUI() {
     lcra_storage.setItem("lcra-lang", lang);
+    lcra_storage.setItem("lcra-bandwidth", bandwidth);
     lcra_storage.setItem("lcra-vocab", JSON.stringify(getWords()));
     for (let opt of vocab.selectedOptions) {
       if (!isExample(opt)) {
@@ -292,6 +302,12 @@ window.addEventListener("DOMContentLoaded", function() {
   }
 
   function loadFrame(el, url, reload) {
+    if (url === null) {
+      if (el.clearSrc) {
+        el.clearSrc();
+      }
+      return;
+    }
     if (reload !== true && el.src == new URL(url, document.baseURI).href) {
       return;
     }
@@ -313,6 +329,17 @@ window.addEventListener("DOMContentLoaded", function() {
     el.style.display = (url)? "block": "none";
   }
 
+  function checkBandwidthOk(bwUsage) {
+    switch (bandwidth + "/" + bwUsage) {
+    case "very-low/high":
+    case "very-low/mid":
+    case "low/high":
+      return false;
+    default:
+      return true;
+    }
+  }
+
   function loadReferencesFromUI(reload) {
     let word = vocab.value;
 
@@ -326,9 +353,13 @@ window.addEventListener("DOMContentLoaded", function() {
         el.proxies = lcraProxies();
       }
       let urlpat = el.getAttribute("urlpat");
+      let isSelected = (refselect.value == el.id);
+      let bandwidthOk = checkBandwidthOk(el.getAttribute("bandwidth-use"));
       // setting display: none prevents some browsers from scrolling to #-URLs
-      el.style.visibility = (refselect.value == el.id)? "visible": "hidden";
-      loadFrame(el, makeFrameUrl(urlpat, word), reload);
+      el.style.visibility = isSelected? "visible": "hidden";
+      loadFrame(el,
+        (isSelected || bandwidthOk)? makeFrameUrl(urlpat, word): null,
+        reload);
     }
     let url = "";
     let label = "";
@@ -411,11 +442,21 @@ window.addEventListener("DOMContentLoaded", function() {
     loadUI();
   });
   setlang.addEventListener("click", () => {
-    let v = window.prompt(S("lang-code") + langs, lang);
+    let v = window.prompt(S("setlang") + langs, lang);
     if (langs.includes(v)) {
       lang = v;
       saveUI();
       loadUI(false, true); // chinese character heights are different
+      loadWordFromUI();
+      loadReferencesFromUI();
+    }
+  });
+  setbw.addEventListener("click", () => {
+    let v = window.prompt(S("setbw") + bandwidths, bandwidth);
+    if (bandwidths.includes(v)) {
+      bandwidth = v;
+      saveUI();
+      loadUI();
       loadWordFromUI();
       loadReferencesFromUI();
     }

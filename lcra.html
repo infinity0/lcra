@@ -60,6 +60,7 @@ from there and drop them into the add button (⊕) here.">⇤</button>
       <div id="advanced">
         <div><button id="help" title="" title-en="Show help text">?</button></div>
         <div><button id="setlang" title="" title-en="Set language of UI hints"><span style="font-size: 65%;"><sup>文</sup><sub>A</sub></span></button></div>
+        <div><button id="setbw" title="" title-en="Tweak bandwidth usage">📶︎</button></div>
         <div><button id="wipe" title="" title-en="Wipe all local data" title-zh-Hans="擦除所有的本地数据">🗑︎</button></div>
       </div>
     </div>
@@ -139,9 +140,11 @@ Drag and drop words here to add">⊕</button>
       (_, x) => x.split(",").map((p) => `<link rel="stylesheet" type="text/css" href="${p}" />`).join("")
     ).replace(/="includes\/templates/g, "=\"/includes/templates")'
     src-transform-comment="work around various purpleculture desktop UI proxy bugs dated 2023-10-16"
+    bandwidth-use="mid"
   ></iframe>
   <iframe class="reference" id="hanzicraft"
     urlpat="https://hanzicraft.com/character/XX#display"
+    bandwidth-use="low"
   ></iframe>
   <iframe class="reference" id="wiktionary"
     urlpat=""
@@ -156,15 +159,18 @@ Drag and drop words here to add">⊕</button>
     These days, many browsers prevent doing this for 3rd-party sites in an iframe, so we do it via the proxy."
     cors-headers=""
     cors-headers-desktop='{"cookie":"stopMobileRedirect=true"}'
+    bandwidth-use="low"
   ></iframe>
   <iframe class="reference" id="baidu-hanyu"
     urlpat=""
     urlpat-desktop="https://hanyu.baidu.com/s?wd=XX#term-body"
     urlpat-mobile="https://hanyu.baidu.com/hanyu-page/term/detail?wd=XX#detail_shiyi"
+    bandwidth-use="mid"
   ></iframe>
   <iframe class="reference" id="baidu-fanyi"
     urlpat="./client/baidu.html#XX"
     refurlpat="https://fanyi.baidu.com/#zh/en/XX"
+    bandwidth-use="low"
   ></iframe>
   <iframe class="reference" id="baidu-baike"
     urlpat=""
@@ -178,6 +184,7 @@ Drag and drop words here to add">⊕</button>
     cors-headers=""
     cors-headers-desktop='{"user-agent": "Mozilla/5.0"}'
     cors-headers-mobile='{"user-agent": "Android/11.0"}'
+    bandwidth-use="high"
   ></iframe>
   <iframe class="reference" id="baidu-search"
     urlpat='https://baidu.com/s?wd="XX"的意思#content_style'
@@ -193,14 +200,17 @@ Drag and drop words here to add">⊕</button>
     cors-headers=""
     cors-headers-desktop='{"user-agent": "Mozilla/5.0"}'
     cors-headers-mobile='{"user-agent": "Android/11.0"}'
+    bandwidth-use="high"
   ></iframe>
   <iframe class="reference" id="google"
     urlpat="./client/google2.html?XX"
     refurlpat="https://translate.google.com/?op=translate&sl=zh-CN&tl=en&text=XX"
+    bandwidth-use="low"
   ></iframe>
   <iframe class="reference" id="bing"
     urlpat="./client/bing.html#XX"
     refurlpat="https://www.bing.com/translator?from=zh-Hans&to=en&text=XX"
+    bandwidth-use="low"
   ></iframe>
   <span id="refurl" class="frameurl"><a href="" target="_blank"
     title=""
