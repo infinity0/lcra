@@ -1,3 +1,7 @@
+:root {
+  --button-width: 3.3ex;
+}
+
 html, body {
   padding: 0;
   height: 100%;
@@ -59,48 +63,81 @@ main {
 #article-text[contenteditable=false], #article-placeholder {
   opacity: 60%;
 }
-
-/* control layout */
-#control select {
-  display: block;
-}
-#control select, #control option, #control input[type=text], #control textarea {
-  width: 100%;
-}
-#article-file {
-  display: none;
-}
-#advanced {
-  position: absolute;
-  display: none;
+#article-ctl {
+  position: relative;
+  float: right;
+  margin: 0.5ex;
+  margin-inline-end: 1ex;
   z-index: 2;
 }
-#advcont:hover #advanced {
-  display: block;
-}
+
+/* control layout */
 #histctl {
   flex-grow: 1;
 }
+.buttons {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  position: relative;
+  spacer {
+    flex-grow: 1;
+  }
+  button, div {
+    flex-grow: 0;
+  }
+}
+#advanced {
+  position: absolute;
+  top: var(--button-width); right: 0;
+  display: none;
+  width: var(--button-width);
+  z-index: 2;
+  #adv-ctl:hover + &, &:hover {
+    display: block;
+  }
+  & > * {
+    display: block;
+    width: var(--button-width);
+  }
+}
 
 /* control sublayout */
-fieldset {
-  margin: 0.5ex 0;
-  padding: 0.5ex 0.25ex;
-}
-fieldset:first-child {
-  margin-top: 0;
-}
-fieldset:last-child {
-  margin-bottom: 0;
-}
-fieldset > :not(legend), #advanced > * {
-  margin: 0.5ex 0;
-}
-fieldset > *:nth-child(2) { /* first child is the legend */
-  margin-top: 0;
-}
-fieldset > *:last-child {
-  margin-bottom: 0;
+#control {
+  select {
+    display: block;
+  }
+  select, option, input[type=text], textarea {
+    width: 100%;
+  }
+  #article-file {
+    display: none;
+  }
+  fieldset {
+    padding-block: 0.25ex;
+    padding-inline: 0.25ex;
+  }
+  fieldset:not(:first-child),
+  fieldset > *:not(legend):not(:nth-child(2)) {
+    margin-block-start: 0.25ex;
+  }
+  fieldset:not(:last-child),
+  fieldset > *:not(legend):not(:last-child) {
+    margin-block-end: 0.25ex;
+  }
+  .buttons {
+    row-gap: 0.15ex;
+  }
+  .buttons > *:not(:first-child) {
+    margin-inline-start: 0.15ex;
+  }
+  .buttons > *:not(:last-child) {
+    margin-inline-end: 0.15ex;
+  }
+  #advanced > * {
+    margin-block-start: 0.15ex;
+  }
 }
 
 /* references layout */
@@ -133,10 +170,13 @@ body {
   font-size: 18px;
 }
 button {
-  min-width: 3.3ex;
+  min-width: var(--button-width);
   vertical-align: middle;
 }
-.secondary {
+legend {
+  font-size: 85%;
+}
+#refcancel {
   font-size: 75%;
 }
 textarea {
@@ -163,7 +203,7 @@ textarea {
     color: color-mix(in srgb, red 66%, transparent);
   }
 }
-#wordctl .noword::placeholder {
+#wordctl .noword::placeholder, .hidden {
   visibility: hidden;
 }
 #vocab option[value=""],

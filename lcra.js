@@ -1,3 +1,6 @@
+let preloadUnselected = true; // set false e.g. for testing to avoid logging clutter
+const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
+
 let lcra_storage = localStorage; // sessionStorage;
 
 function lcra_storageGetBool(key, def) {
@@ -29,7 +32,7 @@ function lcra_articleHide(reinit) {
   return articleHide;
 }
 
-window.addEventListener("DOMContentLoaded", function() {
+window.addEventListener("DOMContentLoaded", async () => {
 
   let langs = ["en", "zh-Hans"];
   let lang;
@@ -73,7 +76,7 @@ window.addEventListener("DOMContentLoaded", function() {
       "zh-Hans": "可能不是单词。真的添加？",
     },
     "refui-text": {
-      "en": ["Desktop UI", "Mobile UI", "Auto UI: D", "Auto UI: M"],
+      "en": ["Desktop UI", "Mobile UI", "Auto UI: Desktop", "Auto UI: Mobile"],
     },
     "incomplete-words": {
       "en": "Incomplete words listed above. Continue with export?",
@@ -222,10 +225,9 @@ window.addEventListener("DOMContentLoaded", function() {
 
   function setRefUI(refui_idx) {
     refui.innerText = REFUI_ICONS[refui_idx];
-    refui.nextElementSibling.innerText = S("refui-text")[refui_idx];
   }
 
-  function loadUI(reinit, resize) {
+  async function loadUI(reinit, resize) {
     lang = selectLanguage([...(reinit? [searchParams.get("lang")]: []), lcra_storage.getItem("lcra-lang"), ...navigator.languages]);
     loadLang("content", (el, v) => {
       el.innerText = v;
@@ -270,7 +272,7 @@ window.addEventListener("DOMContentLoaded", function() {
     setRefUI(preloadRefUI());
     refselect.value = lcra_storage.getItem("lcra-reference") || "purpleculture";
     if (reinit || resize) {
-      autoResizeVocab();
+      await autoResizeVocab();
     }
   }
 
@@ -340,8 +342,6 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  let preloadUnselected = true; // set false e.g. for testing to avoid logging clutter
-
   function loadReferencesFromUI(reload) {
     let word = vocab.value;
 
@@ -405,15 +405,15 @@ window.addEventListener("DOMContentLoaded", function() {
     loadPlaceholderFromUI();
   }, false);
   document.addEventListener("selectionchange", saveSelection);
-  arthide.addEventListener("click", () => {
+  arthide.addEventListener("click", async () => {
     article.style.display = (article.style.display == "none")? "block": "none";
     saveUI();
-    loadUI();
+    await loadUI();
   });
-  artedit.addEventListener("click", () => {
+  artedit.addEventListener("click", async () => {
     arttext.setAttribute("contenteditable", (arttext.getAttribute("contenteditable") + "" === "true")? "false": "true");
     saveUI();
-    loadUI();
+    await loadUI();
   });
   let artimport = document.getElementById("article-import");
   let artfile = document.getElementById("article-file");
@@ -436,39 +436,39 @@ window.addEventListener("DOMContentLoaded", function() {
     // clear value, so change event is triggered again for same file
     artfile.value = "";
   });
-  help.addEventListener("click", () => {
+  help.addEventListener("click", async () => {
     let placeholder = artph.getAttribute("content");
     article.style.display = "block";
     if (!arttext.innerText.startsWith(placeholder.trimEnd())) {
       arttext.innerText = placeholder + "\n----\n\n" + arttext.innerText;
     }
     saveUI();
-    loadUI();
+    await loadUI();
   });
-  setlang.addEventListener("click", () => {
+  setlang.addEventListener("click", async () => {
     let v = window.prompt(S("setlang") + langs, lang);
     if (langs.includes(v)) {
       lang = v;
       saveUI();
-      loadUI(false, true); // chinese character heights are different
+      await loadUI(false, true); // chinese character heights are different
       loadWordFromUI();
       loadReferencesFromUI();
     }
   });
-  setbw.addEventListener("click", () => {
+  setbw.addEventListener("click", async () => {
     let v = window.prompt(S("setbw") + bandwidths, bandwidth);
     if (bandwidths.includes(v)) {
       bandwidth = v;
       saveUI();
-      loadUI();
+      await loadUI();
       loadWordFromUI();
       loadReferencesFromUI();
     }
   });
-  wipe.addEventListener("click", () => {
+  wipe.addEventListener("click", async () => {
     if (window.confirm(wipe.title + " - " + S("confirm"))) {
       lcra_storage.clear();
-      loadUI(true);
+      await loadUI(true);
       loadWordFromUI();
       loadReferencesFromUI();
     }
@@ -519,24 +519,11 @@ window.addEventListener("DOMContentLoaded", function() {
   let addword = document.getElementById("addword");
   addword.addEventListener("click", () => {
     let input = artselection;
-    input = input || window.prompt(S("input") + " " + S("or-select"), "");
+    input = input || window.prompt(
+      S("input") + " " + S("or-select"),
+      Array.from(vocab.selectedOptions).map(o => o.value).join("")
+    );
     input && addInput(input);
-  });
-  addword.addEventListener("dragover", (e) => {
-    // required to make drop work
-    e.preventDefault();
-  });
-  addword.addEventListener("drop", (e) => {
-    // this doesn't work cross-origin unfortunately
-    addInput(e.dataTransfer.getData("text"));
-    e.preventDefault();
-  });
-  let deriveword = document.getElementById("deriveword");
-  deriveword.addEventListener("click", () => {
-    for (let o of vocab.selectedOptions) {
-      let input = window.prompt(S("input"), o.value);
-      input && addInput(input);
-    }
   });
   let findword = document.getElementById("findword");
   findword.addEventListener("click", (e) => {
@@ -820,19 +807,25 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }, 4);
 
-  function autoResizeVocab() {
+  async function resizeVocab(size) {
+    vocab.size = size;
+    await sleep(1); // give browser some time to render
+    return vocab.size;
+  }
+
+  async function autoResizeVocab() {
     let ol = vocab.options.length;
     if (ol == 0) {
       // if the vocab is empty then some browsers don't calculate the heights properly
       // due to Chinese characters having different heights from default ones
       addWord("虚设");
     }
-    vocab.size = 1;
+    await resizeVocab(1);
     let oh = vocab.offsetHeight;
     let w = control.clientWidth;
     let h = histctl.offsetHeight;
     for (let i = 0; i < 128; i++) {
-      vocab.size++;
+      await resizeVocab(vocab.size + 1);
       if (vocab.offsetHeight == oh) {
         // some browsers don't support resizing a <select>
         break;
@@ -840,15 +833,12 @@ window.addEventListener("DOMContentLoaded", function() {
       // sometimes browsers add redundant scrollbars, check clientWidth to prevent this
       if (histctl.offsetHeight > h || control.clientWidth < w) {
         let s = vocab.size - 1;
-        vocab.size = Math.max(s - 1, 1);
-        // give the browser some time to remove the scrollbars
-        setTimeout(() => {
-          vocab.size = s;
-          // ensure selection is in view
-          for (let el of vocab.selectedOptions) {
-            el.scrollIntoView();
-          }
-        }, 1);
+        await resizeVocab(Math.max(s - 1, 1));
+        await resizeVocab(s);
+        // ensure selection is in view
+        for (let el of vocab.selectedOptions) {
+          el.scrollIntoView();
+        }
         break;
       }
     }
@@ -857,12 +847,12 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }
   let resizeTO = null;
-  window.addEventListener("resize", () => {
+  window.addEventListener("resize", async () => {
     clearTimeout(resizeTO);
     resizeTO = setTimeout(autoResizeVocab, 125);
   });
 
-  loadUI(true);
+  await loadUI(true);
   loadWordFromUI();
   window.parent.postMessage({
     appName: "lcra",
