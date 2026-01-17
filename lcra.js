@@ -340,6 +340,8 @@ window.addEventListener("DOMContentLoaded", function() {
     }
   }
 
+  let preloadUnselected = true; // set false e.g. for testing to avoid logging clutter
+
   function loadReferencesFromUI(reload) {
     let word = vocab.value;
 
@@ -357,9 +359,11 @@ window.addEventListener("DOMContentLoaded", function() {
       let bandwidthOk = checkBandwidthOk(el.getAttribute("bandwidth-use"));
       // setting display: none prevents some browsers from scrolling to #-URLs
       el.style.visibility = isSelected? "visible": "hidden";
-      loadFrame(el,
-        (isSelected || bandwidthOk)? makeFrameUrl(urlpat, word): null,
-        reload);
+      if (isSelected || preloadUnselected) {
+        loadFrame(el,
+          (isSelected || bandwidthOk)? makeFrameUrl(urlpat, word): null,
+          reload);
+      }
     }
     let url = "";
     let label = "";

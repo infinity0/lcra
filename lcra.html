@@ -99,13 +99,15 @@ Drag and drop words here to add">⊕</button>
   <fieldset>
     <legend>参考 Reference</legend>
     <select id="refselect" size="4">
-      <option value="purpleculture" selected>Purple Culture</option>
-      <option value="hanzicraft">HanziCraft</option>
+      <option value="mdbg-ai" selected>MDBG (AI)</option>
+      <option value="yellowbridge">YellowBridge</option>
       <option value="wiktionary">Wiktionary</option>
       <option value="baidu-hanyu" content="" content-en="Baidu Hanyu" content-zh-Hans="百度汉语"></option>
       <option value="baidu-fanyi" content="" content-en="Baidu Fanyi" content-zh-Hans="百度翻译"></option>
       <option value="baidu-baike" content="" content-en="Baidu Baike" content-zh-Hans="百度百科"></option>
       <option value="baidu-search" content="" content-en="Baidu Search" content-zh-Hans="百度搜索"></option>
+      <option value="purpleculture">Purple Culture</option>
+      <option value="hanzicraft">HanziCraft</option>
       <option value="google">Google Translate</option>
       <option value="bing">Bing Translator</option>
     </select>
@@ -118,34 +120,29 @@ Drag and drop words here to add">⊕</button>
   </fieldset>
 </div>
 <div id="references">
-  <iframe class="reference" id="purpleculture"
-    urlpat="https://www.purpleculture.net/dictionary-details/?word=XX#resultarea"
-    sandbox is="x-frame-bypass"
-    use-proxy-if=""
-    use-proxy-if-desktop="true"
-    use-proxy-if-mobile="!lcra_detectMobile()"
-    use-proxy-comment="
-    - if we want desktop UI on desktop, we still need to proxy because purpleculture blocks desktop UAs from accessing their website inside an iframe.
-    - if we want desktop UI on mobile, we must proxy to set the relevant cookies.
-    - if we want mobile UI on desktop, we must proxy to set the relevant cookies.
-    "
-    cors-headers=""
-    cors-headers-desktop='{"cookie": "siteversion=full"}'
-    cors-headers-mobile='{"cookie": "siteversion=mobile"}'
-    src-transform='src => src.replace(
-      /<script src="min\/\?f=(.*)&(amp;)?\d+"><\/script>/g,
-      (_, x) => x.split(",").map((p) => `<script src="${p}"></script>`).join("")
-    ).replace(
-      /<link rel="stylesheet" type="text\/css" href="min\/\?f=(.*)&(amp;)?\d+" *\/>/g,
-      (_, x) => x.split(",").map((p) => `<link rel="stylesheet" type="text/css" href="${p}" />`).join("")
-    ).replace(/="includes\/templates/g, "=\"/includes/templates")'
-    src-transform-comment="work around various purpleculture desktop UI proxy bugs dated 2023-10-16"
-    bandwidth-use="mid"
-  ></iframe>
-  <iframe class="reference" id="hanzicraft"
-    urlpat="https://hanzicraft.com/character/XX#display"
+  <iframe class="reference" id="mdbg-ai"
+    comment="the rest of MDBG's UI is horrific and wastes people's time forcing them to click on multiple things. so we just extract the AI part that actually offers something valuable that other sources don't"
+    urlpat="https://www.mdbg.net/chinese/dictionary-ajax?c=aiqhs0&i=XX"
+    refurlpat="https://www.mdbg.net/chinese/dictionary?page=worddict&wdqb=XX"
     bandwidth-use="low"
-  ></iframe>
+    style="background: white;"
+    ></iframe>
+  <iframe class="reference" id="yellowbridge"
+    comment="the thesaurus page offers something valuable that other sources don't"
+    urlpat="https://www.yellowbridge.com/chinese/thesaurus.php?word=XX#mainData"
+    bandwidth-use="low"
+    sandbox is="x-frame-bypass"
+    use-proxy-if="true"
+    cors-headers='{"cookie":"PHPSESSID=00000000000000000000000000000000"}'
+    src-transform='src => src.replace(
+      /(<body\s*[^]*?>)[^]*?(<main\s*[^]*?>[^]*?<\/main>)[^]*?(<\/body>)/g,
+      (_, a, b, c) => [a, b, c].join("")
+    ).replace(
+      /(src|href)="\/\/(r.yellowbridge.com\/.*?)"/g,
+      (_, a, h) => `${a}="${LCRA_PROXY}https://${h}"`
+    )'
+    src-transform-comment="extract the content without ads, redirect includes via our proxy too"
+    ></iframe>
   <iframe class="reference" id="wiktionary"
     urlpat=""
     urlpat-desktop="https://en.wiktionary.org/w/index.php?title=TT&mobileaction=toggle_view_desktop#Chinese"
@@ -201,6 +198,35 @@ Drag and drop words here to add">⊕</button>
     cors-headers-desktop='{"user-agent": "Mozilla/5.0"}'
     cors-headers-mobile='{"user-agent": "Android/11.0"}'
     bandwidth-use="high"
+  ></iframe>
+  <iframe class="reference" id="purpleculture"
+    comment="as of 2025, purpleculture has obnoxious Cloudflare settings that blocks most VPN access even when using it manually via browser. it's not worth it for us to try to work around this; they are shooting themselves in the foot anyway with this overly restrictive tactic."
+    urlpat="https://www.purpleculture.net/dictionary-details/?word=XX#resultarea"
+    sandbox is="x-frame-bypass"
+    use-proxy-if=""
+    use-proxy-if-desktop="true"
+    use-proxy-if-mobile="!lcra_detectMobile()"
+    use-proxy-comment="
+    - if we want desktop UI on desktop, we still need to proxy because purpleculture blocks desktop UAs from accessing their website inside an iframe.
+    - if we want desktop UI on mobile, we must proxy to set the relevant cookies.
+    - if we want mobile UI on desktop, we must proxy to set the relevant cookies.
+    "
+    cors-headers=""
+    cors-headers-desktop='{"cookie": "siteversion=full"}'
+    cors-headers-mobile='{"cookie": "siteversion=mobile"}'
+    src-transform='src => src.replace(
+      /<script src="min\/\?f=(.*)&(amp;)?\d+"><\/script>/g,
+      (_, x) => x.split(",").map((p) => `<script src="${p}"></script>`).join("")
+    ).replace(
+      /<link rel="stylesheet" type="text\/css" href="min\/\?f=(.*)&(amp;)?\d+" *\/>/g,
+      (_, x) => x.split(",").map((p) => `<link rel="stylesheet" type="text/css" href="${p}" />`).join("")
+    ).replace(/="includes\/templates/g, "=\"/includes/templates")'
+    src-transform-comment="work around various purpleculture desktop UI proxy bugs dated 2023-10-16"
+    bandwidth-use="mid"
+  ></iframe>
+  <iframe class="reference" id="hanzicraft"
+    urlpat="https://hanzicraft.com/character/XX#display"
+    bandwidth-use="low"
   ></iframe>
   <iframe class="reference" id="google"
     urlpat="./client/google2.html?XX"

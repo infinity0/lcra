@@ -3,7 +3,6 @@ html, body {
   height: 100%;
 }
 
-/* Work around https://github.com/ankidroid/Anki-Android/issues/14547 */
 @media (prefers-color-scheme: light) {
   body {
     background-color: white;

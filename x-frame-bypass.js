@@ -66,6 +66,7 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
         this.srcdoc = srcx(data).replace(/<head([^>]*)>/i, `<head$1>
   <base href="${url}">
   <script>
+  let origOptions = ${JSON.stringify(options)};
   // Proxy XMLHttpRequest as well
   (function(xhr) {
     var open = xhr.open;
@@ -85,7 +86,7 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
     if (window.frameElement && document.activeElement && document.activeElement.href) {
       e.preventDefault()
       console.debug("X-Frame-Bypass intercepted click", e);
-      window.frameElement.loadProxy(document.activeElement.href)
+      window.frameElement.loadProxy(document.activeElement.href, origOptions)
     }
   })
   document.addEventListener('submit', e => {
@@ -93,9 +94,18 @@ customElements.define('x-frame-bypass', class extends HTMLIFrameElement {
       e.preventDefault()
       console.debug("X-Frame-Bypass intercepted submit", e);
       if (document.activeElement.form.method === 'post')
-        window.frameElement.loadProxy(document.activeElement.form.action, {method: 'post', body: new FormData(document.activeElement.form)})
+        window.frameElement.loadProxy(
+          document.activeElement.form.action,
+          Object.assign({
+            method: 'post',
+            body: new FormData(document.activeElement.form)
+          }, origOptions)
+        )
       else
-        window.frameElement.loadProxy(document.activeElement.form.action + '?' + new URLSearchParams(new FormData(document.activeElement.form)))
+        window.frameElement.loadProxy(
+          document.activeElement.form.action + '?' + new URLSearchParams(new FormData(document.activeElement.form)),
+          origOptions
+        )
     }
   })
 
