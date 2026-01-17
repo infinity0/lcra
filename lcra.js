@@ -99,6 +99,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  let wordattrs = ["zh-Hans", "zh-Latn-pinyin", "en", "src-title", "src-url"];
   const zhtw = OpenCC.Converter({ from: 'cn', to: 'tw' });
 
   let article = document.getElementById("article");
@@ -160,16 +161,22 @@ window.addEventListener("DOMContentLoaded", async () => {
     }, 1);
   }
 
+  function mkWord(word, def) {
+    return Object.assign(
+      Object.fromEntries(wordattrs.map(a => [a, ""])),
+      def,
+      {
+        "zh-Hans": word,
+        "zh-Latn-pinyin": provisionalPinyin(word),
+      }
+    );
+  }
+
   function addWord(word) {
     let opt = document.createElement("option");
-    if (typeof(word) == "object") {
-      opt.value = word["zh-Hans"];
-      opt.setAttribute("zh-Latn-pinyin", word["zh-Latn-pinyin"]);
-      opt.setAttribute("en", word["en"]);
-    } else {
-      opt.value = word;
-      opt.setAttribute("zh-Latn-pinyin", provisionalPinyin(word));
-      opt.setAttribute("en", "");
+    opt.value = word["zh-Hans"];
+    for (let a of wordattrs) {
+      opt.setAttribute(a, word[a]);
     }
     vocab.appendChild(opt);
     setWordAppearance(opt);
@@ -186,11 +193,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   function getWords() {
-    return Array.from(vocab.options).filter(o => !isExample(o)).map(opt => ({
-      "zh-Hans": opt.value,
-      "zh-Latn-pinyin": opt.getAttribute("zh-Latn-pinyin"),
-      "en": opt.getAttribute("en")
-    }));
+    return Array.from(vocab.options).filter(o => !isExample(o)).map(
+      opt => Object.fromEntries(wordattrs.map(a => [a, opt.getAttribute(a)]))
+    );
   }
 
   let exampleWord;
@@ -253,7 +258,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       if (found) {
         selectOption(found);
       } else {
-        let opt = addWord(exampleWord);
+        let opt = addWord(mkWord(exampleWord));
         opt.classList.add("exword");
         selectOption(opt);
       }
@@ -270,7 +275,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     artedit.innerText = lcra_storageGetBool("lcra-article-edit", true)? "✎": "🔒︎";
     artedit.title = lcra_storageGetBool("lcra-article-edit", true)? S("article-unlocked"): S("article-locked");
     setRefUI(preloadRefUI());
-    refselect.value = lcra_storage.getItem("lcra-reference") || "purpleculture";
+    if (lcra_storage.getItem("lcra-reference")) {
+      refselect.value = lcra_storage.getItem("lcra-reference");
+    }
     if (reinit || resize) {
       await autoResizeVocab();
     }
@@ -475,6 +482,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   function addInput(input) {
+    let selectedSrc = {};
+    if (vocab.selectedOptions.length) {
+      selectedSrc["src-title"] = vocab.selectedOptions[0].getAttribute("src-title");
+      selectedSrc["src-url"] = vocab.selectedOptions[0].getAttribute("src-url");
+    }
     // split on non-Chinese characters
     let words = input.split(/[^\p{sc=Han}]+/gu);
     for (let w of words) {
@@ -489,7 +501,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         selectOption(found);
         unsetIfExample(found);
       } else {
-        addWord(w);
+        addWord(mkWord(w, selectedSrc));
       }
     }
     for (let o of vocab.options) {
@@ -658,17 +670,16 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   let exportCsv = document.getElementById("vocab-export-csv");
   exportCsv.addEventListener("click", () => {
-    let keys = "zh-Hans,zh-Latn-pinyin,en".split(",");
     let contents = getVocab();
     if (!contents) return;
-    let lines = contents.map(opt => keys.map(k => csvEscape(opt[k])).join(",") + "\n");
+    let lines = contents.map(opt => wordattrs.map(k => csvEscape(opt[k])).join(",") + "\n");
     // https://docs.ankiweb.net/importing/text-files.html#file-headers
     // https://www.w3.org/International/questions/qa-choosing-language-tags
     let deckurl = document.location.href.replace(/([^/]*)$/,"sample.apkg");
     lines.unshift(`#deckurl:${deckurl}\n`);
     lines.unshift("#deck:Chinese words from reading list: 拼音, English\n");
-    lines.unshift("#notetype:Basic " + keys[0] + ": " + keys.slice(1).join(", ") + "\n");
-    lines.unshift("#columns:" + keys + "\n");
+    lines.unshift("#notetype:Basic zh-Hans: zh-Latn-pinyin, en\n");
+    lines.unshift("#columns:" + wordattrs + "\n");
     lines.unshift("#separator:Comma\n");
     exportVocab(lines, "text/csv");
     if (!lcra_storage.getItem("lcra-anki-shown")) {
@@ -681,16 +692,15 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  let wordzh = document.getElementById("word-zh-Hans");
-  let wordpy = document.getElementById("word-zh-Latn-pinyin");
-  let worden = document.getElementById("word-en");
+  let worddetails = wordattrs.map(a => document.getElementById(`word-${a}`));
+  let [wordzh, wordpy, worden, wordsrct, wordsrcu] = worddetails;
   function loadWordFromUI() {
     if (vocab.selectedOptions.length) {
       let opt = vocab.selectedOptions[0];
-      wordzh.value = opt.value;
-      wordpy.value = opt.getAttribute("zh-Latn-pinyin");
-      worden.value = opt.getAttribute("en");
-      for (let el of [wordzh, wordpy, worden]) {
+      for (let a of wordattrs) {
+        document.getElementById(`word-${a}`).value = opt.getAttribute(a, "");
+      }
+      for (let el of worddetails) {
         el.classList.remove("noword");
         el.disabled = "";
         if (isExample(opt)) {
@@ -700,7 +710,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
       }
     } else {
-      for (let el of [wordzh, wordpy, worden]) {
+      for (let el of worddetails) {
         el.value = S("add-a-word");
         el.classList.add("noword");
         el.disabled = "disabled";
@@ -710,34 +720,31 @@ window.addEventListener("DOMContentLoaded", async () => {
   function saveWordIntoUI() {
     if (vocab.selectedOptions.length) {
       let opt = vocab.selectedOptions[0];
+      for (let a of wordattrs) {
+        opt.setAttribute(a, document.getElementById(`word-${a}`).value);
+      }
       opt.value = wordzh.value;
-      opt.setAttribute("zh-Latn-pinyin", wordpy.value);
-      opt.setAttribute("en", worden.value);
       setWordAppearance(opt);
       unsetIfExample(opt); // any edit on an example automatically saves it
-      for (let el of [wordzh, wordpy, worden]) {
+      for (let el of worddetails) {
         el.classList.remove("exword");
       }
     }
   }
+  for (let el of worddetails) {
+    el.addEventListener("input", () => {
+      saveWordIntoUI();
+      saveUI();
+    }, false);
+  }
   wordzh.addEventListener("input", () => {
-    saveWordIntoUI();
-    saveUI();
     loadReferencesFromUI();
-  }, false);
-  wordpy.addEventListener("input", () => {
-    saveWordIntoUI();
-    saveUI();
   }, false);
   wordpy.addEventListener("dblclick", () => {
     wordpy.value = provisionalPinyin(wordzh.value);
     saveWordIntoUI();
     saveUI();
   });
-  worden.addEventListener("input", () => {
-    saveWordIntoUI();
-    saveUI();
-  }, false);
 
   refselect.addEventListener("change", () => {
     saveUI();
@@ -818,7 +825,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (ol == 0) {
       // if the vocab is empty then some browsers don't calculate the heights properly
       // due to Chinese characters having different heights from default ones
-      addWord("虚设");
+      addWord(mkWord("虚设"));
     }
     await resizeVocab(1);
     let oh = vocab.offsetHeight;
