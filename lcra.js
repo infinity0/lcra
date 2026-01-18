@@ -99,7 +99,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  let wordattrs = ["zh-Hans", "zh-Latn-pinyin", "en", "src-title", "src-url"];
+  let wordattrs = ["zh-Hans", "zh-Latn-pinyin", "en", "ex_src-title", "ex_src-url"];
   const zhtw = OpenCC.Converter({ from: 'cn', to: 'tw' });
 
   let article = document.getElementById("article");
@@ -484,8 +484,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   function addInput(input) {
     let selectedSrc = {};
     if (vocab.selectedOptions.length) {
-      selectedSrc["src-title"] = vocab.selectedOptions[0].getAttribute("src-title");
-      selectedSrc["src-url"] = vocab.selectedOptions[0].getAttribute("src-url");
+      selectedSrc["ex_src-title"] = vocab.selectedOptions[0].getAttribute("ex_src-title");
+      selectedSrc["ex_src-url"] = vocab.selectedOptions[0].getAttribute("ex_src-url");
     }
     // split on non-Chinese characters
     let words = input.split(/[^\p{sc=Han}]+/gu);
@@ -692,13 +692,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  let worddetails = wordattrs.map(a => document.getElementById(`word-${a}`));
+  let worddetails = wordattrs.map(a => document.getElementById(`word_${a}`));
   let [wordzh, wordpy, worden, wordsrct, wordsrcu] = worddetails;
   function loadWordFromUI() {
     if (vocab.selectedOptions.length) {
       let opt = vocab.selectedOptions[0];
       for (let a of wordattrs) {
-        document.getElementById(`word-${a}`).value = opt.getAttribute(a, "");
+        document.getElementById(`word_${a}`).value = opt.getAttribute(a, "");
       }
       for (let el of worddetails) {
         el.classList.remove("noword");
@@ -721,7 +721,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (vocab.selectedOptions.length) {
       let opt = vocab.selectedOptions[0];
       for (let a of wordattrs) {
-        opt.setAttribute(a, document.getElementById(`word-${a}`).value);
+        opt.setAttribute(a, document.getElementById(`word_${a}`).value);
       }
       opt.value = wordzh.value;
       setWordAppearance(opt);

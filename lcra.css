@@ -207,7 +207,7 @@ textarea {
   visibility: hidden;
 }
 #vocab option[value=""],
-#wordctl .word-details#word-zh-Hans:not(.noword):not(:valid) {
+#wordctl .word-details#word_zh-Hans:not(.noword):not(:valid) {
   background-color: #f66;
 }
 .found {
