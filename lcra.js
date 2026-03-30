@@ -64,12 +64,16 @@ window.addEventListener("DOMContentLoaded", async () => {
       "zh-Hans": "先添加（⊕）个单词",
     },
     "input": {
-      "en": "Please input the words to add, separated by spaces.",
+      "en": "Please input the word(s) to add, separated by spaces.",
       "zh-Hans": "请输入要添加的单词，以空格分隔。",
     },
-    "or-select": {
+    "or-select-article": {
       "en": "Or, select some in the article then try again.",
       "zh-Hans": "或者，在文章里选择一些然后再重试。",
+    },
+    "or-select-vocab": {
+      "en": "Or, select one from the vocab list then try again.",
+      "zh-Hans": "或者，在词汇列表里选择一个然后再重试。",
     },
     "confirm-long-word": {
       "en": "may not be a word. Really add?",
@@ -107,6 +111,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   let arttext = document.getElementById("article-text");
   let artselection = "";
   let arthide = document.getElementById("article-hide");
+  let artfind = document.getElementById("article-find");
   let artedit = document.getElementById("article-edit");
   let help = document.getElementById("help");
   let setlang = document.getElementById("setlang");
@@ -417,6 +422,48 @@ window.addEventListener("DOMContentLoaded", async () => {
     saveUI();
     await loadUI();
   });
+  artfind.addEventListener("click", (e) => {
+    // clear old results
+    let oldFound = arttext.querySelectorAll(".found");
+    let sameword = false;
+    if (oldFound.length) {
+      sameword = oldFound[0].innerText == vocab.value;
+      if (!sameword || e.shiftKey) {
+        for (let el of oldFound) {
+          el.replaceWith(el.firstChild);
+        }
+      }
+    }
+    if (!vocab.value) {
+      return;
+    }
+    // add spans for new results
+    if (!sameword) {
+      arttext.innerHTML = arttext.innerHTML.replaceAll(vocab.value, `<span class="found">${vocab.value}</span>`);
+    }
+    // scroll to next result
+    if (!e.shiftKey) { // FIXME: long press
+      let found = arttext.querySelectorAll(".found");
+      if (found.length) {
+        found = Array.from(found);
+        let oldfocus = found.findIndex(el => el.classList.contains("found-focus"));
+        if (oldfocus == found.length - 1) {
+          // we reached the end, clear all highlights
+          // next click will start from beginning
+          for (let el of found) {
+            el.replaceWith(el.firstChild);
+          }
+        } else {
+          if (oldfocus >= 0) {
+            found[oldfocus].classList.remove("found-focus");
+          }
+          focus = found[oldfocus + 1];
+          focus.classList.add("found-focus");
+          focus.scrollIntoView();
+        }
+      }
+    }
+  });
   artedit.addEventListener("click", async () => {
     arttext.setAttribute("contenteditable", (arttext.getAttribute("contenteditable") + "" === "true")? "false": "true");
     saveUI();
@@ -530,55 +577,21 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   let addword = document.getElementById("addword");
   addword.addEventListener("click", () => {
-    let input = artselection;
-    input = input || window.prompt(
-      S("input") + " " + S("or-select"),
-      Array.from(vocab.selectedOptions).map(o => o.value).join("")
+    let orig = artselection.trim();
+    let input = window.prompt(
+      S("input") + (orig? "": " " + S("or-select-article")),
+      orig
     );
     input && addInput(input);
   });
-  let findword = document.getElementById("findword");
-  findword.addEventListener("click", (e) => {
-    // clear old results
-    let oldFound = arttext.querySelectorAll(".found");
-    let sameword = false;
-    if (oldFound.length) {
-      sameword = oldFound[0].innerText == vocab.value;
-      if (!sameword || e.shiftKey) {
-        for (let el of oldFound) {
-          el.replaceWith(el.firstChild);
-        }
-      }
-    }
-    if (!vocab.value) {
-      return;
-    }
-    // add spans for new results
-    if (!sameword) {
-      arttext.innerHTML = arttext.innerHTML.replaceAll(vocab.value, `<span class="found">${vocab.value}</span>`);
-    }
-    // scroll to next result
-    if (!e.shiftKey) { // FIXME: long press
-      let found = arttext.querySelectorAll(".found");
-      if (found.length) {
-        found = Array.from(found);
-        let oldfocus = found.findIndex(el => el.classList.contains("found-focus"));
-        if (oldfocus == found.length - 1) {
-          // we reached the end, clear all highlights
-          // next click will start from beginning
-          for (let el of found) {
-            el.replaceWith(el.firstChild);
-          }
-        } else {
-          if (oldfocus >= 0) {
-            found[oldfocus].classList.remove("found-focus");
-          }
-          focus = found[oldfocus + 1];
-          focus.classList.add("found-focus");
-          focus.scrollIntoView();
-        }
-      }
-    }
+  let deriveword = document.getElementById("deriveword");
+  deriveword.addEventListener("click", () => {
+    let orig = Array.from(vocab.selectedOptions).map(o => o.value).join("").trim();
+    let input = window.prompt(
+      S("input") + (orig? "": " " + S("or-select-vocab")),
+      orig
+    );
+    input && addInput(input);
   });
   let delword = document.getElementById("delword");
   delword.addEventListener("click", () => {
