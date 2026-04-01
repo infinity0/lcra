@@ -598,6 +598,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     let i = vocab.selectedIndex;
     if (i < 0) return;
     let opt = vocab.options[i];
+    if (!window.confirm(delword.title + " " + opt.value + " - " + S("confirm"))) return;
     vocab.selectedIndex += (i == vocab.options.length - 1)? -1: 1;
     unsetIfExample(opt);
     opt.remove();
@@ -607,16 +608,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   let delallword = document.getElementById("delallword");
   delallword.addEventListener("click", () => {
-    if (window.confirm(delallword.title + " - " + S("confirm"))) {
-      for (let i = vocab.options.length - 1; i >= 0; i--) {
-        let opt = vocab.options[i];
-        unsetIfExample(opt);
-        opt.remove();
-      }
-      saveUI();
-      loadWordFromUI();
-      loadReferencesFromUI();
+    if (!window.confirm(delallword.title + " - " + S("confirm"))) return;
+    for (let i = vocab.options.length - 1; i >= 0; i--) {
+      let opt = vocab.options[i];
+      unsetIfExample(opt);
+      opt.remove();
     }
+    saveUI();
+    loadWordFromUI();
+    loadReferencesFromUI();
   });
 
   function download(url, label, cleanup) {
